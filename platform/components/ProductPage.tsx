@@ -267,10 +267,6 @@ export default function ProductPage({
     ...(store?.logo_url ? ({ "--brand-logo": `url("${resolveImageUrl(store.logo_url)}")` } as any) : {}),
   };
 
-  // Données de réputation (affichées uniquement si réelles)
-  const productRating = (product as any).rating;
-  const productReviewsCount = (product as any).reviews_count;
-
   return (
     <div
       className="pd-wrapper min-h-screen bg-[var(--bg)] text-[var(--text)]"
@@ -371,19 +367,6 @@ export default function ProductPage({
           <div className="pd-buybox">
             <p className="pd-vendor">{store.name}</p>
             <h1 className="pd-title">{product.name}</h1>
-
-            {/* AVIS CLIENTS RÉELS (SI RENSEIGNÉS) */}
-            {Boolean(productRating || productReviewsCount) && (
-              <div className="pd-rating">
-                <span className="pd-stars" aria-hidden="true">
-                  {"★".repeat(Math.min(5, Math.max(1, Math.round(Number(productRating) || 5))))}
-                </span>
-                <span>
-                  {productRating ? `${productRating}/5` : ""}
-                  {productReviewsCount ? ` · ${productReviewsCount} avis vérifiés` : ""}
-                </span>
-              </div>
-            )}
 
             <div className="pd-pricing">
               <strong className="pd-price">{formatMoney(product.price)}</strong>

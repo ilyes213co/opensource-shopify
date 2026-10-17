@@ -208,9 +208,6 @@ export default function FunnelPage({
     ...(store?.logo_url ? ({ "--brand-logo": `url("${resolveImageUrl(store.logo_url)}")` } as any) : {}),
   };
 
-  const productRating = (product as any).rating;
-  const productReviewsCount = (product as any).reviews_count;
-
   return (
     <div className="pd-wrapper min-h-screen" data-theme={activeTheme} style={inlineBrandingStyles}>
       {/* ── Injection dynamique du Pixel si renseigné ── */}
@@ -313,18 +310,6 @@ export default function FunnelPage({
           <div className="pd-buybox">
             <p className="pd-vendor">{store.name}</p>
             <h1 className="pd-title">{product.name}</h1>
-
-            {Boolean(productRating || productReviewsCount) && (
-              <div className="pd-rating">
-                <span className="pd-stars" aria-hidden="true">
-                  {"★".repeat(Math.min(5, Math.max(1, Math.round(Number(productRating) || 5))))}
-                </span>
-                <span>
-                  {productRating ? `${productRating}/5` : ""}
-                  {productReviewsCount ? ` · ${productReviewsCount} avis clients vérifiés` : ""}
-                </span>
-              </div>
-            )}
 
             <div className="pd-pricing">
               <strong className="pd-price">{formatMoney(product.price)}</strong>

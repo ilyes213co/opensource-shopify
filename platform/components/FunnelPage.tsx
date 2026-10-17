@@ -296,9 +296,6 @@ export default function FunnelPage({
     ...(store?.logo_url ? ({ "--brand-logo": `url("${resolveImageUrl(store.logo_url)}")` } as any) : {}),
   };
 
-  const productRating = (product as any).rating;
-  const productReviewsCount = (product as any).reviews_count;
-
   return (
     <EditableProvider
       storeId={store.id}
@@ -433,23 +430,6 @@ export default function FunnelPage({
               as="h1"
               className="pd-title"
             />
-
-            <div className="pd-rating">
-              <span className="pd-stars" aria-hidden="true">
-                {"★".repeat(Math.min(5, Math.max(1, Math.round(Number(productRating) || 5))))}
-              </span>
-              <span>
-                <Editable
-                  field="rating_text"
-                  defaultValue={
-                    productRating || productReviewsCount
-                      ? `${productRating ? `${productRating}/5` : "4.9/5"}${productReviewsCount ? ` · ${productReviewsCount} avis clients vérifiés` : " · 48 avis clients vérifiés"}`
-                      : "4.9/5 · 48 avis clients vérifiés"
-                  }
-                  as="span"
-                />
-              </span>
-            </div>
 
             <div className="pd-pricing">
               <Editable
