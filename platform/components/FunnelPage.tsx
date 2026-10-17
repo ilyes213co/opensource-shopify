@@ -67,7 +67,6 @@ export default function FunnelPage({
   const [customerName, setCustomerName] = useState<string>("");
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [customerCommune, setCustomerCommune] = useState<string>("");
-  const [customerAddress, setCustomerAddress] = useState<string>("");
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -220,7 +219,6 @@ export default function FunnelPage({
       customer_name: customerName.trim(),
       customer_phone: cleanedPhone || customerPhone.trim(),
       customer_commune: customerCommune.trim() || undefined,
-      customer_address: customerAddress.trim() || undefined,
       store_id: effectiveStoreId,
     };
 
@@ -696,20 +694,6 @@ export default function FunnelPage({
                       <small>Au bureau de livraison</small>
                     </span>
                   </label>
-                </div>
-
-                <div>
-                  <label className="pd-label" htmlFor="funnel-address">
-                    Adresse exacte ou Rue <span className="opacity-70 font-normal lowercase">(optionnel)</span>
-                  </label>
-                  <input
-                    id="funnel-address"
-                    type="text"
-                    className="pd-select"
-                    placeholder="Ex: Cité 5 Juillet, Bâtiment B, N° 12"
-                    value={customerAddress}
-                    onChange={(e) => setCustomerAddress(e.target.value)}
-                  />
                 </div>
               </div>
 

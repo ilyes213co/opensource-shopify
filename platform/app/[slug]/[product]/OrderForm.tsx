@@ -263,7 +263,6 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
     const addressParts: string[] = [];
     if (selectedWilaya) addressParts.push(`Wilaya: ${wilayaLabel} (${shipMode === "stopdesk" ? "Stop Desk" : "À domicile"})`);
     if (selectedCommune) addressParts.push(`Commune: ${selectedCommune}`);
-    if (form.address.trim()) addressParts.push(form.address.trim());
     const fullAddress = addressParts.join(" — ") || null;
 
     let finalOrderId = "CMD-" + Date.now().toString().slice(-6);
@@ -373,7 +372,6 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
       ``,
       `👤 ${form.name}`,
       `📞 ${form.phone}`,
-      form.address ? `📍 ${form.address}` : "",
       form.notes   ? `📝 ${form.notes}`   : "",
       ``,
       `Réf. commande : #${finalOrderId.slice(-6).toUpperCase()}`,
@@ -608,15 +606,6 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
           className={errors.phone ? inputErrorClass : inputClass}
         />
         {errors.phone && <p className="mt-1 text-xs text-red-500">⚠ {errors.phone}</p>}
-      </div>
-
-      {/* Address */}
-      <div>
-        <Label>Adresse / Rue / Bâtiment <span className="text-stone-300 normal-case font-normal tracking-normal">(optionnel)</span></Label>
-        <input type="text" value={form.address} onChange={set("address")}
-          placeholder="Cité, numéro de rue, bâtiment..."
-          className={inputClass}
-        />
       </div>
 
       {/* Notes */}

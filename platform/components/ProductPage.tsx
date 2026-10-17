@@ -62,7 +62,6 @@ export default function ProductPage({
   const [customerName, setCustomerName] = useState<string>("");
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [customerCommune, setCustomerCommune] = useState<string>("");
-  const [customerAddress, setCustomerAddress] = useState<string>("");
   const [showOrderForm, setShowOrderForm] = useState<boolean>(false);
 
   // UI state
@@ -192,7 +191,6 @@ export default function ProductPage({
       customer_name: customerName.trim(),
       customer_phone: cleanedPhone || customerPhone.trim(),
       customer_commune: customerCommune.trim() || undefined,
-      customer_address: customerAddress.trim() || undefined,
       store_id: effectiveStoreId,
     };
 
@@ -619,18 +617,6 @@ export default function ProductPage({
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       required
-                    />
-                  </div>
-                  <div>
-                    <label className="pd-label" style={{ marginBottom: "4px" }}>
-                      Adresse exacte / Rue / Cité <span style={{ opacity: 0.65, fontWeight: 400, textTransform: "none" }}>(optionnel)</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="pd-select"
-                      placeholder="Ex: Cité 5 Juillet, Bâtiment B, N° 12"
-                      value={customerAddress}
-                      onChange={(e) => setCustomerAddress(e.target.value)}
                     />
                   </div>
                 </div>
