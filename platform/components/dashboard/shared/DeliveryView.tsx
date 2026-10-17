@@ -440,10 +440,12 @@ export default function DeliveryView({ type }: DeliveryViewProps) {
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   Application globale rapide
                 </h3>
-                <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-500 dark:text-amber-300 border border-amber-500/30 uppercase tracking-wider">
-                  <Crown className="w-3 h-3 text-amber-500 dark:text-amber-400" />
-                  PRO
-                </span>
+                {userPlan.isFree && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-500 dark:text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+                    <Crown className="w-3 h-3 text-amber-500 dark:text-amber-400" />
+                    PRO
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 dark:text-white/50">
                 Définissez un tarif unique pour l&apos;appliquer instantanément aux 58 wilayas.
