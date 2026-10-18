@@ -664,13 +664,13 @@ function SettingsContent() {
     },
     {
       id: "carrier-notifications" as const,
-      label: "Transporteurs & Notifications",
+      label: "Transport & Alertes",
       icon: Truck,
       desc: "Yalidine, ZR Express & Alertes",
     },
     {
       id: "account-billing" as const,
-      label: "Mon Compte & Abonnement",
+      label: "Compte & Abonnement",
       icon: CreditCard,
       desc: "Plan, profil & zone de danger",
     },
@@ -681,26 +681,37 @@ function SettingsContent() {
 
   return (
     <div className="space-y-7 pb-20 max-w-5xl">
-      {/* ── En-tête & Sélecteur de Boutique ───────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Paramètres
-            </h1>
+      {/* ── En-tête Dynamique (Submenu Actif) & Sélecteur de Boutique ───────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-white/[0.08]">
+        <div className="flex items-start gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-accent/10 dark:bg-accent/20 border border-accent/20 dark:border-sky/30 flex items-center justify-center text-accent dark:text-sky shrink-0 shadow-xs mt-0.5">
+            <CurrentTabIcon className="w-5 h-5" />
           </div>
-          <p className="text-slate-500 dark:text-white/60 text-xs sm:text-sm mt-1">
-            Pilotez votre infrastructure de vente, vos pixels de conversion et votre logistique.
-          </p>
+
+          <div>
+            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-white/40 mb-1">
+              <span>Paramètres</span>
+              <span className="text-slate-300 dark:text-white/20">/</span>
+              <span className="text-accent dark:text-sky">{currentTabObj.label}</span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              {currentTabObj.label}
+            </h1>
+
+            <p className="text-slate-500 dark:text-white/60 text-xs sm:text-sm mt-1 font-medium">
+              {currentTabObj.desc}
+            </p>
+          </div>
         </div>
 
         {stores.length > 1 && (
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 pt-1">
             <span className="text-xs font-semibold text-slate-400">Projet actif :</span>
             <select
               value={selectedStoreId}
               onChange={(e) => handleStoreSelect(e.target.value)}
-              className="bg-white dark:bg-[#0c0d1c] border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-accent outline-none shadow-sm"
+              className="bg-white dark:bg-[#0c0d1c] border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-accent outline-none shadow-sm cursor-pointer"
             >
               {stores.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -710,29 +721,6 @@ function SettingsContent() {
             </select>
           </div>
         )}
-      </div>
-
-      {/* ── En-tête de Section Active (Piloté par le sous-menu latéral) ────────── */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-white/[0.08]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-accent/10 dark:bg-accent/20 border border-accent/25 dark:border-sky/30 flex items-center justify-center text-accent dark:text-sky shrink-0 shadow-xs">
-            <CurrentTabIcon className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-white/40">
-                Paramètres
-              </span>
-              <span className="text-slate-300 dark:text-white/20">/</span>
-              <span className="text-xs font-extrabold text-accent dark:text-sky">
-                {currentTabObj.label}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-white/60 font-medium mt-0.5">
-              {currentTabObj.desc}
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
