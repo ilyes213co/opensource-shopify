@@ -1930,13 +1930,20 @@ function SettingsContent() {
                 </p>
               </div>
 
-              <Link
-                href="/dashboard/upgrade"
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md transition-all shrink-0"
-              >
-                <span>Changer de formule</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              {!userPlan.isBusiness ? (
+                <Link
+                  href="/dashboard/upgrade"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md transition-all shrink-0"
+                >
+                  <span>Changer de formule</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-500/10 border border-purple-500/25 shrink-0">
+                  <Crown className="w-4 h-4 text-purple-500 shrink-0" />
+                  <span>Formule Maximale Active</span>
+                </div>
+              )}
             </div>
           </div>
 
