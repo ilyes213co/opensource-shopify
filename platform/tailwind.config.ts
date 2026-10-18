@@ -10,12 +10,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#06060f",
+        bg: "var(--bg)",
+        surface: "var(--surface)",
+        "surface-2": "var(--surface-2)",
+        ink: "var(--ink)",
+        muted: "var(--muted)",
+        line: "var(--line)",
         accent: "#2540ea",
         sky: "#60a5fa",
         "sky-light": "#93c5fd",
         brand: {
-          DEFAULT: "#2540EA",
+          DEFAULT: "var(--brand)",
+          soft:    "var(--brand-soft)",
           royal:   "#2540EA",
           azure:   "#60A5FA",
           sky:     "#93C5FD",

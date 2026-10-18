@@ -133,11 +133,16 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme')||localStorage.getItem('app_theme');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`,
+          }}
+        />
+        <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-screen bg-[#06060f] text-white font-sans antialiased selection:bg-[#2540ea] selection:text-white">
+      <body className="min-h-screen bg-bg text-ink font-sans antialiased selection:bg-brand selection:text-white transition-colors duration-200">
         <Providers>{children}</Providers>
         <Toaster
           position="top-right"

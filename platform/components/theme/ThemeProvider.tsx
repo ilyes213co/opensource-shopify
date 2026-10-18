@@ -21,21 +21,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("app_theme") as Theme | null;
-    const initialTheme: Theme = saved === "light" ? "light" : "dark";
-    setThemeState(initialTheme);
-    setMounted(true);
-
-    if (initialTheme === "dark") {
-      document.documentElement.classList.add("dark");
+    const current = document.documentElement.dataset.theme as Theme | undefined;
+    if (current === "light" || current === "dark") {
+      setThemeState(current);
     } else {
-      document.documentElement.classList.remove("dark");
+      const saved = (localStorage.getItem("theme") || localStorage.getItem("app_theme")) as Theme | null;
+      const initialTheme: Theme = saved === "light" ? "light" : "dark";
+      setThemeState(initialTheme);
+      document.documentElement.setAttribute("data-theme", initialTheme);
+      if (initialTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     }
+    setMounted(true);
   }, []);
 
   const setTheme = (t: Theme) => {
     setThemeState(t);
-    localStorage.setItem("app_theme", t);
+    document.documentElement.setAttribute("data-theme", t);
+    try {
+      localStorage.setItem("theme", t);
+      localStorage.setItem("app_theme", t);
+    } catch (e) {}
     if (t === "dark") {
       document.documentElement.classList.add("dark");
     } else {

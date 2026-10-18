@@ -4,19 +4,60 @@
 
 @layer base {
   :root {
+    --bg: #FFFFFF;
+    --surface: #F4F5F8;
+    --surface-2: #E6E8EE;
+    --ink: #06060F;
+    --muted: #6B7280;
+    --line: #E6E8EE;
+    --brand: #2540EA;
+    --brand-soft: #EEF2FF;
+    color-scheme: light;
+
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-    --border: rgba(96, 165, 250, 0.28);
+    --border: var(--line);
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
 
-    /* easytrade Design Tokens */
-    --bg: #06060f;
+    --card: #FFFFFF;
+    --card-hover: #F8FAFC;
+    --text: var(--ink);
+    
+    --g: #2540ea;
+    --gd: #1a2ca3;
+    --gl: #93c5fd;
+    --g-glow: rgba(37, 64, 234, 0.25);
+    --g-subtle: rgba(37, 64, 234, 0.08);
+    --g-border: var(--line);
+    --btn-text: #ffffff;
+
+    --font-heading: 'Outfit', -apple-system, sans-serif;
+    --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  }
+
+  :root[data-theme="dark"],
+  .dark {
+    --bg: #06060F;
+    --surface: #12121C;
+    --surface-2: #1B1B28;
+    --ink: #F4F5F8;
+    --muted: #9AA0AE;
+    --line: #262636;
+    --brand: #2540EA;
+    --brand-soft: #1B2A66;
+    color-scheme: dark;
+
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --border: rgba(96, 165, 250, 0.28);
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
     --card: linear-gradient(155deg, rgba(28, 44, 148, 0.35) 0%, rgba(10, 14, 38, 0.85) 100%);
     --card-hover: linear-gradient(155deg, rgba(37, 64, 234, 0.45) 0%, rgba(14, 20, 56, 0.92) 100%);
     --text: #ffffff;
-    --muted: rgba(226, 232, 240, 0.78);
     
     --g: #2540ea;
     --gd: #1a2ca3;
@@ -25,22 +66,11 @@
     --g-subtle: rgba(37, 64, 234, 0.18);
     --g-border: rgba(96, 165, 250, 0.5);
     --btn-text: #ffffff;
-
-    --font-heading: 'Outfit', -apple-system, sans-serif;
-    --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --border: rgba(96, 165, 250, 0.28);
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
   }
 
   * {
     box-sizing: border-box;
-    border-color: var(--border, rgba(96, 165, 250, 0.28));
+    border-color: var(--line, rgba(96, 165, 250, 0.28));
   }
 
   html {
@@ -50,8 +80,8 @@
   }
 
   body {
-    background-color: var(--bg, #06060f);
-    color: var(--text, #ffffff);
+    background-color: var(--bg);
+    color: var(--ink);
     font-family: var(--font-body, 'Plus Jakarta Sans', system-ui, sans-serif);
     line-height: 1.6;
     overflow-x: hidden;
@@ -223,5 +253,37 @@
   background: #38bdf8;
   box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
 }
+
+/* ─── Circular Theme View Transition ─────────────────────────────────────── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+  animation: reveal .65s cubic-bezier(.4, 0, .2, 1) both;
+}
+
+@keyframes reveal {
+  from {
+    clip-path: circle(0 at var(--x, 90%) var(--y, 6%));
+  }
+  to {
+    clip-path: circle(150vmax at var(--x, 90%) var(--y, 6%));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 
 

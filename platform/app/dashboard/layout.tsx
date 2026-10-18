@@ -69,15 +69,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-ink text-slate-900 dark:text-white flex flex-col lg:flex-row selection:bg-accent selection:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-bg text-ink flex flex-col lg:flex-row selection:bg-brand selection:text-white transition-colors duration-200">
       {/* ─── Mobile Header (< lg) ─── */}
-      <header className="lg:hidden sticky top-0 z-30 h-16 bg-white/95 dark:bg-[#070712]/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/[0.08] px-4 flex items-center justify-between shadow-xs transition-colors duration-200">
+      <header className="lg:hidden sticky top-0 z-30 h-16 bg-surface/95 backdrop-blur-xl border-b border-line px-4 flex items-center justify-between shadow-xs transition-colors duration-200">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             aria-label="Ouvrir le menu de navigation"
-            className="p-2 -ml-1.5 rounded-xl text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] active:scale-95 transition-all"
+            className="p-2 -ml-1.5 rounded-xl text-ink hover:bg-surface-2 active:scale-95 transition-all"
           >
             <Menu className="w-6 h-6" />
           </button>
@@ -110,16 +110,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 260 }}
-              className="absolute top-0 bottom-0 left-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#070712] border-r border-slate-200/80 dark:border-white/[0.08] flex flex-col shadow-2xl overflow-hidden"
+              className="absolute top-0 bottom-0 left-0 w-[280px] max-w-[85vw] bg-surface border-r border-line flex flex-col shadow-2xl overflow-hidden"
             >
               {/* Drawer Header */}
-              <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200/80 dark:border-white/[0.07] shrink-0">
+              <div className="h-16 flex items-center justify-between px-5 border-b border-line shrink-0">
                 <EasyTradeLogo size={28} href="/dashboard" />
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
                   aria-label="Fermer le menu"
-                  className="p-2 -mr-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-white/60 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] active:scale-95 transition"
+                  className="p-2 -mr-2 rounded-xl text-muted hover:text-ink hover:bg-surface-2 active:scale-95 transition"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -133,12 +133,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </AnimatePresence>
 
       {/* ─── Desktop Sidebar (lg+) ─── */}
-      <aside className="hidden lg:flex w-64 shrink-0 border-r border-slate-200/80 dark:border-white/[0.08] bg-white/95 dark:bg-[#070712]/95 backdrop-blur-2xl flex-col h-screen sticky top-0 relative z-30 shadow-[1px_0_20px_rgba(0,0,0,0.04)] dark:shadow-[1px_0_30px_rgba(0,0,0,0.45)] transition-colors duration-200">
+      <aside className="hidden lg:flex w-64 shrink-0 border-r border-line bg-surface/95 backdrop-blur-2xl flex-col h-screen sticky top-0 relative z-30 shadow-[1px_0_20px_rgba(0,0,0,0.04)] dark:shadow-[1px_0_30px_rgba(0,0,0,0.45)] transition-colors duration-200">
         {/* Subtle ambient light gradient */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent/[0.02] dark:from-accent/[0.04] via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-brand/[0.02] dark:from-brand/[0.04] via-transparent to-transparent" />
 
         {/* Logo Header */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200/80 dark:border-white/[0.07] relative z-10 shrink-0">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-line relative z-10 shrink-0">
           <EasyTradeLogo size={30} href="/dashboard" />
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -150,7 +150,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ─── Main Content ─── */}
-      <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50 dark:bg-ink min-h-[calc(100vh-4rem)] lg:min-h-screen transition-colors duration-200">
+      <main className="flex-1 min-w-0 overflow-y-auto bg-bg min-h-[calc(100vh-4rem)] lg:min-h-screen transition-colors duration-200">
         <div className="max-w-6xl mx-auto px-3.5 py-4 sm:px-6 sm:py-8">
           {children}
         </div>

@@ -101,12 +101,14 @@ function maskName(name: string): string {
 
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
 
+// ─── Custom Tooltip ───────────────────────────────────────────────────────────
+
 const LineTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-[#0f1117] border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm shadow-xl">
-      <p className="text-slate-400 dark:text-white/50 text-xs mb-1">{label}</p>
-      <p className="text-indigo-600 dark:text-indigo-300 font-semibold">{payload[0].value} vues</p>
+    <div className="bg-surface border border-line rounded-xl px-3 py-2 text-sm shadow-xl">
+      <p className="text-muted text-xs mb-1">{label}</p>
+      <p className="text-brand font-semibold">{payload[0].value} vues</p>
     </div>
   );
 };
@@ -114,9 +116,9 @@ const LineTooltip = ({ active, payload, label }: any) => {
 const BarTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-[#0f1117] border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm shadow-xl">
-      <p className="text-slate-800 dark:text-white/80 font-medium truncate max-w-[160px]">{payload[0].payload.name}</p>
-      <p className="text-violet-600 dark:text-violet-300 font-semibold">{payload[0].value} vues</p>
+    <div className="bg-surface border border-line rounded-xl px-3 py-2 text-sm shadow-xl">
+      <p className="text-ink font-medium truncate max-w-[160px]">{payload[0].payload.name}</p>
+      <p className="text-brand font-semibold">{payload[0].value} vues</p>
     </div>
   );
 };
@@ -124,8 +126,8 @@ const BarTooltip = ({ active, payload }: any) => {
 const PieTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-[#0f1117] border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm shadow-xl">
-      <p className="text-slate-800 dark:text-white/80">{payload[0].name}</p>
+    <div className="bg-surface border border-line rounded-xl px-3 py-2 text-sm shadow-xl">
+      <p className="text-ink">{payload[0].name}</p>
       <p className="font-semibold" style={{ color: payload[0].payload.fill }}>{payload[0].value}</p>
     </div>
   );
@@ -141,7 +143,7 @@ function KpiCard({
 }) {
   const { value: pctVal, up } = pct(value, prev);
   return (
-    <div className="relative overflow-hidden bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.07] rounded-2xl p-5 group hover:border-slate-300 dark:hover:border-white/[0.14] transition-all duration-300 shadow-sm">
+    <div className="relative overflow-hidden bg-surface border border-line rounded-2xl p-5 group hover:border-brand/40 transition-all duration-300 shadow-sm">
       {/* glow */}
       <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity ${color}`} />
       <div className="flex items-start justify-between mb-4">
@@ -154,11 +156,11 @@ function KpiCard({
           </span>
         )}
       </div>
-      <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-        {formattedValue ?? fmt(value)}<span className="text-sm sm:text-base text-slate-400 dark:text-white/40 ml-1.5">{unit}</span>
+      <p className="text-2xl sm:text-3xl font-bold text-ink tracking-tight">
+        {formattedValue ?? fmt(value)}<span className="text-sm sm:text-base text-muted ml-1.5">{unit}</span>
       </p>
-      <p className="text-slate-500 dark:text-white/50 text-xs sm:text-sm mt-1">{label}</p>
-      {subtitle && <p className="text-[11px] text-slate-400 dark:text-white/30 mt-0.5">{subtitle}</p>}
+      <p className="text-muted text-xs sm:text-sm mt-1">{label}</p>
+      {subtitle && <p className="text-[11px] text-muted/80 mt-0.5">{subtitle}</p>}
     </div>
   );
 }
@@ -304,7 +306,7 @@ export default function AnalyticsPage() {
             <select
               value={activeStore?.id || ""}
               onChange={(e) => setSelectedStoreId(e.target.value)}
-              className="bg-white dark:bg-[#0c0d1e] border border-slate-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-white/80 focus:border-accent outline-none shadow-sm"
+              className="bg-surface border border-line rounded-xl px-3 py-1.5 text-xs font-semibold text-ink focus:border-brand outline-none shadow-sm"
             >
               {stores.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -315,7 +317,7 @@ export default function AnalyticsPage() {
           )}
 
           {/* Period selector */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] rounded-xl p-1">
+          <div className="flex items-center gap-1 bg-surface border border-line rounded-xl p-1">
             {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => {
               const isProPeriod = p === "30d" || p === "3m";
               const isLocked = isProPeriod && userPlan.isFree;
@@ -332,14 +334,14 @@ export default function AnalyticsPage() {
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                     period === p
-                      ? "bg-indigo-600 text-white shadow"
+                      ? "bg-brand text-white shadow"
                       : isLocked
-                      ? "text-slate-400 dark:text-white/30 hover:text-amber-500 dark:hover:text-amber-300"
-                      : "text-slate-600 dark:text-white/40 hover:text-slate-900 dark:hover:text-white/70"
+                      ? "text-muted/60 hover:text-amber-500"
+                      : "text-muted hover:text-ink hover:bg-surface-2"
                   }`}
                 >
                   <span>{PERIOD_LABELS[p]}</span>
-                  {isLocked && <Lock className="w-3 h-3 text-amber-500 dark:text-amber-400" />}
+                  {isLocked && <Lock className="w-3 h-3 text-amber-500" />}
                 </button>
               );
             })}
@@ -434,27 +436,27 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* LineChart — Vues 30j */}
-        <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.07] rounded-2xl p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Vues sur la période</h2>
-          <p className="text-slate-400 dark:text-white/30 text-xs mb-4">Visiteurs uniques par jour</p>
+        <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-ink mb-1">Vues sur la période</h2>
+          <p className="text-muted text-xs mb-4">Visiteurs uniques par jour</p>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={daily_views} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#2540ea" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#2540ea" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(150,150,150,0.1)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--line, rgba(150,150,150,0.2))" />
               <XAxis
                 dataKey="date"
-                tick={{ fill: "#94a3b8", fontSize: 11 }}
+                tick={{ fill: "var(--muted, #6B7280)", fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
               />
               <YAxis
-                tick={{ fill: "#94a3b8", fontSize: 11 }}
+                tick={{ fill: "var(--muted, #6B7280)", fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
               />
@@ -462,19 +464,19 @@ export default function AnalyticsPage() {
               <Line
                 type="monotone"
                 dataKey="views"
-                stroke="#6366f1"
+                stroke="#2540ea"
                 strokeWidth={2.5}
                 dot={false}
-                activeDot={{ r: 5, fill: "#6366f1", strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: "#2540ea", strokeWidth: 0 }}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         {/* PieChart — Sources de trafic */}
-        <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.07] rounded-2xl p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Sources de trafic</h2>
-          <p className="text-slate-400 dark:text-white/30 text-xs mb-4">Répartition des visiteurs</p>
+        <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-ink mb-1">Sources de trafic</h2>
+          <p className="text-muted text-xs mb-4">Répartition des visiteurs</p>
           <div className="flex items-center gap-6">
             <ResponsiveContainer width="55%" height={220}>
               <PieChart>
@@ -506,9 +508,9 @@ export default function AnalyticsPage() {
                         className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                         style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
                       />
-                      <span className="text-slate-600 dark:text-white/60 text-xs truncate">{s.source}</span>
+                      <span className="text-muted text-xs truncate">{s.source}</span>
                     </div>
-                    <span className="text-slate-800 dark:text-white/80 text-xs font-medium tabular-nums">{pct}%</span>
+                    <span className="text-ink text-xs font-medium tabular-nums">{pct}%</span>
                   </div>
                 );
               })}
@@ -518,24 +520,24 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Charts row 2 ────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.07] rounded-2xl p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Top produits vus</h2>
-        <p className="text-slate-400 dark:text-white/30 text-xs mb-5">Les 8 produits les plus consultés</p>
+      <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-ink mb-1">Top produits vus</h2>
+        <p className="text-muted text-xs mb-5">Les 8 produits les plus consultés</p>
         <div className="space-y-3">
           {top_products.map((product, i) => {
             const barWidth = Math.round((product.views / maxProductViews) * 100);
             return (
               <div key={product.product_id} className="flex items-center gap-3 group cursor-pointer">
                 {/* Rank */}
-                <span className={`text-xs font-bold w-5 text-right flex-shrink-0 ${i === 0 ? "text-amber-500 dark:text-amber-400" : i === 1 ? "text-slate-400 dark:text-slate-300" : i === 2 ? "text-orange-500" : "text-slate-300 dark:text-white/20"}`}>
+                <span className={`text-xs font-bold w-5 text-right flex-shrink-0 ${i === 0 ? "text-amber-500 dark:text-amber-400" : i === 1 ? "text-slate-400 dark:text-slate-300" : i === 2 ? "text-orange-500" : "text-muted/60"}`}>
                   {i + 1}
                 </span>
                 {/* Name */}
-                <span className="text-sm text-slate-700 dark:text-white/70 w-40 flex-shrink-0 truncate group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                <span className="text-sm text-ink w-40 flex-shrink-0 truncate group-hover:text-brand transition-colors">
                   {product.name}
                 </span>
                 {/* Bar */}
-                <div className="flex-1 bg-slate-100 dark:bg-white/[0.04] rounded-full h-2 overflow-hidden">
+                <div className="flex-1 bg-surface-2 rounded-full h-2 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{
@@ -543,13 +545,13 @@ export default function AnalyticsPage() {
                       background: i === 0
                         ? "linear-gradient(90deg,#f59e0b,#fbbf24)"
                         : i === 1
-                        ? "linear-gradient(90deg,#6366f1,#8b5cf6)"
-                        : "linear-gradient(90deg,#6366f1,#8b5cf6)",
+                        ? "linear-gradient(90deg,#2540ea,#60a5fa)"
+                        : "linear-gradient(90deg,#2540ea,#60a5fa)",
                     }}
                   />
                 </div>
                 {/* Count */}
-                <span className="text-xs font-semibold text-slate-500 dark:text-white/50 w-12 text-right tabular-nums">
+                <span className="text-xs font-semibold text-muted w-12 text-right tabular-nums">
                   {fmt(product.views)}
                 </span>
               </div>
@@ -559,15 +561,15 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Orders Table ─────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.07] rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-5 py-4 border-b border-slate-100 dark:border-white/[0.07] flex items-center justify-between">
+      <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-line flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Commandes récentes</h2>
-            <p className="text-slate-400 dark:text-white/30 text-xs mt-0.5">{recent_orders.length} commande{recent_orders.length !== 1 ? "s" : ""}</p>
+            <h2 className="text-sm font-semibold text-ink">Commandes récentes</h2>
+            <p className="text-muted text-xs mt-0.5">{recent_orders.length} commande{recent_orders.length !== 1 ? "s" : ""}</p>
           </div>
           <a
             href="/dashboard/orders"
-            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline transition-colors"
+            className="text-xs text-brand hover:underline transition-colors"
           >
             Voir tout →
           </a>
@@ -577,18 +579,18 @@ export default function AnalyticsPage() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-white/[0.05]">
+              <tr className="border-b border-line">
                 {["Date", "Client", "Produits", "Total", "Statut", "Action"].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-medium text-slate-400 dark:text-white/30 uppercase tracking-wider">
+                  <th key={h} className="px-5 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+            <tbody className="divide-y divide-line">
               {recent_orders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-slate-400 dark:text-white/20 text-sm">
+                  <td colSpan={6} className="px-5 py-10 text-center text-muted text-sm">
                     Aucune commande sur cette période
                   </td>
                 </tr>
@@ -596,21 +598,21 @@ export default function AnalyticsPage() {
                 recent_orders.map((order) => {
                   const st = STATUS_STYLES[order.status] ?? DEFAULT_STATUS_STYLE;
                   return (
-                    <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
-                      <td className="px-5 py-3.5 text-xs text-slate-500 dark:text-white/40 tabular-nums whitespace-nowrap">
+                    <tr key={order.id} className="hover:bg-surface-2/40 transition-colors group">
+                      <td className="px-5 py-3.5 text-xs text-muted tabular-nums whitespace-nowrap">
                         {new Date(order.created_at).toLocaleDateString("fr-DZ", {
                           day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
                         })}
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-slate-800 dark:text-white/70">
+                      <td className="px-5 py-3.5 text-sm text-ink">
                         {maskName(order.customer_name)}
                       </td>
-                      <td className="px-5 py-3.5 text-xs text-slate-600 dark:text-white/50 max-w-[180px]">
+                      <td className="px-5 py-3.5 text-xs text-muted max-w-[180px]">
                         <span className="truncate block">
                           {order.items.map(i => `${i.qty}× ${i.name}`).join(", ")}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-sm font-semibold text-slate-900 dark:text-white tabular-nums whitespace-nowrap">
+                      <td className="px-5 py-3.5 text-sm font-semibold text-ink tabular-nums whitespace-nowrap">
                         {order.total_amount.toLocaleString("fr-DZ")} DZD
                       </td>
                       <td className="px-5 py-3.5">
@@ -621,7 +623,7 @@ export default function AnalyticsPage() {
                       <td className="px-5 py-3.5">
                         <a
                           href={`/dashboard/orders?id=${order.id}`}
-                          className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline opacity-0 group-hover:opacity-100 transition-all"
+                          className="text-xs text-brand hover:underline opacity-0 group-hover:opacity-100 transition-all"
                         >
                           Détails →
                         </a>
@@ -635,19 +637,19 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Mobile list */}
-        <div className="md:hidden divide-y divide-slate-100 dark:divide-white/[0.05]">
+        <div className="md:hidden divide-y divide-line">
           {recent_orders.map((order) => {
             const st = STATUS_STYLES[order.status] ?? DEFAULT_STATUS_STYLE;
             return (
               <div key={order.id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm text-slate-800 dark:text-white/80 truncate">{maskName(order.customer_name)}</p>
-                  <p className="text-xs text-slate-500 dark:text-white/40 mt-0.5 truncate">
+                  <p className="text-sm text-ink truncate">{maskName(order.customer_name)}</p>
+                  <p className="text-xs text-muted mt-0.5 truncate">
                     {order.items.map(i => i.name).join(", ")}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{order.total_amount.toLocaleString()} DZD</p>
+                  <p className="text-sm font-semibold text-ink">{order.total_amount.toLocaleString()} DZD</p>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${st.bg} ${st.text}`}>
                     {st.label}
                   </span>

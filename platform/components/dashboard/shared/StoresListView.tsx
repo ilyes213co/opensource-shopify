@@ -224,17 +224,17 @@ export default function StoresListView({ type }: StoresListViewProps) {
       {/* Delete Confirmation Modal */}
       {storeToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white dark:bg-[#0d0d1a] border border-slate-200 dark:border-white/10 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+          <div className="w-full max-w-md bg-surface border border-line rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
             <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center">
               <AlertTriangle className="w-6 h-6" />
             </div>
 
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              <h3 className="text-lg font-bold text-ink">
                 Supprimer {isFunnel ? "ce funnel" : "cette boutique"} ?
               </h3>
-              <p className="text-sm text-slate-500 dark:text-white/60 mt-2 leading-relaxed">
-                Êtes-vous sûr de vouloir supprimer définitivement <strong className="text-slate-900 dark:text-white font-semibold">« {storeToDelete.name} »</strong> ? 
+              <p className="text-sm text-muted mt-2 leading-relaxed">
+                Êtes-vous sûr de vouloir supprimer définitivement <strong className="text-ink font-semibold">« {storeToDelete.name} »</strong> ? 
                 Cette action est irréversible et effacera toutes les données, produits et commandes associés.
               </p>
             </div>
@@ -244,7 +244,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
                 type="button"
                 onClick={() => setStoreToDelete(null)}
                 disabled={isDeleting}
-                className="px-4 py-2.5 rounded-xl font-medium text-sm text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors"
+                className="px-4 py-2.5 rounded-xl font-medium text-sm text-muted hover:text-ink hover:bg-surface-2 transition-colors"
               >
                 Annuler
               </button>
@@ -275,26 +275,26 @@ export default function StoresListView({ type }: StoresListViewProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight">
               {isFunnel ? "Mes Funnels de Vente" : "Mes Boutiques"}
             </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-surface-2 text-ink border border-line">
               {stores.length} {stores.length > 1 ? (isFunnel ? "funnels" : "boutiques") : (isFunnel ? "funnel" : "boutique")}
             </span>
           </div>
           <div className="flex items-center gap-2.5 mt-1.5 flex-wrap">
-            <p className="text-sm text-slate-500 dark:text-white/60">
+            <p className="text-sm text-muted">
               {isFunnel
                 ? "Pilotez vos pages mono-produit optimisées pour un taux de conversion maximal."
                 : "Gérez vos catalogues de vente multi-produits et votre présence en ligne."}
             </p>
-            <span className="text-slate-300 dark:text-white/20">•</span>
+            <span className="text-muted">•</span>
             <span
               className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
                 isStoreLimitReached
                   ? "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                   : userPlan.isFree
-                  ? "bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-white/70 border border-slate-200 dark:border-white/10"
+                  ? "bg-surface-2 text-muted border border-line"
                   : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
               }`}
             >
@@ -318,7 +318,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
           className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-bold text-sm text-white shadow-lg active:scale-95 transition-all duration-200 self-start sm:self-auto shrink-0 ${
             isStoreLimitReached
               ? "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-600/95 hover:to-amber-700/95 shadow-amber-600/25 hover:shadow-amber-600/40"
-              : "bg-gradient-to-r from-accent to-[#3b55f6] hover:from-accent/95 hover:to-[#2e47e8] shadow-accent/25 hover:shadow-accent/40"
+              : "bg-brand hover:bg-brand/90 shadow-brand/25 hover:shadow-brand/40"
           }`}
         >
           {isStoreLimitReached ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -335,15 +335,15 @@ export default function StoresListView({ type }: StoresListViewProps) {
       {!loading && stores.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {/* Active Stores */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-white/50 uppercase tracking-wider block">
+          <div className="p-4 sm:p-5 rounded-2xl bg-surface border border-line shadow-sm">
+            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block">
               {isFunnel ? "Funnels Actifs" : "Boutiques en Ligne"}
             </span>
             <div className="flex items-center gap-2 mt-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              <p className="text-xl sm:text-2xl font-black text-ink">
                 {publishedCount}
-                <span className="text-xs font-normal text-slate-400 dark:text-white/40 ml-1.5">
+                <span className="text-xs font-normal text-muted ml-1.5">
                   / {stores.length}
                 </span>
               </p>
@@ -351,39 +351,39 @@ export default function StoresListView({ type }: StoresListViewProps) {
           </div>
 
           {/* Products Count */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-white/50 uppercase tracking-wider block">
+          <div className="p-4 sm:p-5 rounded-2xl bg-surface border border-line shadow-sm">
+            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block">
               Articles Référencés
             </span>
             <div className="flex items-center gap-2 mt-2">
               <Package className="w-4 h-4 text-sky shrink-0" />
-              <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              <p className="text-xl sm:text-2xl font-black text-ink">
                 {totalProducts}
               </p>
             </div>
           </div>
 
           {/* Total Orders */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-white/50 uppercase tracking-wider block">
+          <div className="p-4 sm:p-5 rounded-2xl bg-surface border border-line shadow-sm">
+            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block">
               Commandes Reçues
             </span>
             <div className="flex items-center gap-2 mt-2">
-              <ShoppingBag className="w-4 h-4 text-indigo-500 shrink-0" />
-              <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              <ShoppingBag className="w-4 h-4 text-brand shrink-0" />
+              <p className="text-xl sm:text-2xl font-black text-ink">
                 {totalOrders}
               </p>
             </div>
           </div>
 
           {/* Total Revenue */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-white/50 uppercase tracking-wider block">
+          <div className="p-4 sm:p-5 rounded-2xl bg-surface border border-line shadow-sm">
+            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block">
               Chiffre d&apos;Affaires
             </span>
             <div className="flex items-center gap-2 mt-2">
               <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
-              <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white truncate">
+              <p className="text-lg sm:text-xl font-black text-ink truncate">
                 {formatDZD(totalRevenue)}
               </p>
             </div>
@@ -395,27 +395,27 @@ export default function StoresListView({ type }: StoresListViewProps) {
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/40" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`Rechercher ${isFunnel ? "un funnel" : "une boutique"} par nom, slug...`}
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 focus:outline-none focus:border-accent shadow-sm transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-surface border border-line text-sm text-ink placeholder:text-muted focus:outline-none focus:border-brand shadow-sm transition-all"
           />
         </div>
 
         {/* Filter Pills, Sorter & View Mode */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Status Segmented Control */}
-          <div className="flex items-center bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] rounded-2xl p-1 shadow-sm">
+          <div className="flex items-center bg-surface border border-line rounded-2xl p-1 shadow-sm">
             <button
               type="button"
               onClick={() => setStatusFilter("all")}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 statusFilter === "all"
-                  ? "bg-accent text-white shadow-sm"
-                  : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-brand text-white shadow-sm"
+                  : "text-muted hover:text-ink"
               }`}
             >
               Tous ({stores.length})
@@ -426,7 +426,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 statusFilter === "published"
                   ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
+                  : "text-muted hover:text-ink"
               }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${statusFilter === "published" ? "bg-white" : "bg-emerald-500"}`} />
@@ -438,7 +438,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 statusFilter === "draft"
                   ? "bg-amber-600 text-white shadow-sm"
-                  : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
+                  : "text-muted hover:text-ink"
               }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${statusFilter === "draft" ? "bg-white" : "bg-amber-500"}`} />
@@ -450,7 +450,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] rounded-2xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-white/80 focus:border-accent outline-none shadow-sm"
+            className="bg-surface border border-line rounded-2xl px-3 py-2 text-xs font-semibold text-ink focus:border-brand outline-none shadow-sm"
           >
             <option value="recent">Plus récents</option>
             <option value="name">Nom (A-Z)</option>
@@ -458,14 +458,14 @@ export default function StoresListView({ type }: StoresListViewProps) {
           </select>
 
           {/* View Toggle */}
-          <div className="hidden sm:flex items-center bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] rounded-2xl p-1 shadow-sm">
+          <div className="hidden sm:flex items-center bg-surface border border-line rounded-2xl p-1 shadow-sm">
             <button
               type="button"
               onClick={() => setViewMode("grid")}
               className={`p-1.5 rounded-xl transition-all ${
                 viewMode === "grid"
-                  ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                  ? "bg-surface-2 text-ink shadow-sm"
+                  : "text-muted hover:text-ink"
               }`}
               title="Vue grille"
             >
@@ -476,8 +476,8 @@ export default function StoresListView({ type }: StoresListViewProps) {
               onClick={() => setViewMode("list")}
               className={`p-1.5 rounded-xl transition-all ${
                 viewMode === "list"
-                  ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                  ? "bg-surface-2 text-ink shadow-sm"
+                  : "text-muted hover:text-ink"
               }`}
               title="Vue liste"
             >
@@ -493,33 +493,33 @@ export default function StoresListView({ type }: StoresListViewProps) {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-72 rounded-3xl bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] p-6 space-y-4 animate-pulse shadow-sm"
+              className="h-72 rounded-3xl bg-surface border border-line p-6 space-y-4 animate-pulse shadow-sm"
             >
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-white/10" />
+                <div className="w-14 h-14 rounded-2xl bg-surface-2" />
                 <div className="space-y-2 flex-1">
-                  <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-2/3" />
-                  <div className="h-3 bg-slate-100 dark:bg-white/5 rounded w-1/3" />
+                  <div className="h-4 bg-surface-2 rounded w-2/3" />
+                  <div className="h-3 bg-surface-2 rounded w-1/3" />
                 </div>
               </div>
-              <div className="h-10 bg-slate-100 dark:bg-white/5 rounded-xl mt-6" />
-              <div className="h-16 bg-slate-100 dark:bg-white/5 rounded-xl mt-4" />
+              <div className="h-10 bg-surface-2 rounded-xl mt-6" />
+              <div className="h-16 bg-surface-2 rounded-xl mt-4" />
             </div>
           ))}
         </div>
       ) : filteredStores.length === 0 ? (
         /* Empty State */
-        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0d1e] p-12 text-center space-y-5 shadow-sm">
-          <div className="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto text-accent shadow-inner">
+        <div className="rounded-3xl border border-line bg-surface p-12 text-center space-y-5 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center mx-auto text-brand shadow-inner">
             {isFunnel ? <Sparkles className="w-8 h-8" /> : <Store className="w-8 h-8" />}
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+            <h3 className="text-lg font-bold text-ink">
               {searchQuery || statusFilter !== "all" 
                 ? "Aucun résultat trouvé" 
                 : isFunnel ? "Aucun funnel actif" : "Aucune boutique créée"}
             </h3>
-            <p className="text-sm text-slate-500 dark:text-white/60 max-w-md mx-auto">
+            <p className="text-sm text-muted max-w-md mx-auto">
               {searchQuery || statusFilter !== "all"
                 ? "Modifiez vos filtres ou votre terme de recherche pour retrouver vos projets."
                 : isFunnel
@@ -533,7 +533,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
             className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm text-white shadow-lg active:scale-95 transition-all ${
               isStoreLimitReached
                 ? "bg-amber-600 hover:bg-amber-700 shadow-amber-600/25"
-                : "bg-accent hover:bg-accent/90 shadow-accent/25 hover:shadow-accent/40"
+                : "bg-brand hover:bg-brand/90 shadow-brand/25 hover:shadow-brand/40"
             }`}
           >
             {isStoreLimitReached ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -555,7 +555,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
             return (
               <div
                 key={store.id}
-                className="group rounded-3xl bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] hover:border-accent/40 dark:hover:border-accent/50 p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-accent/5 relative overflow-hidden"
+                className="group rounded-3xl bg-surface border border-line hover:border-brand/40 p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-xl relative overflow-hidden"
               >
                 {/* Brand Color top highlight bar */}
                 <div 
@@ -585,12 +585,12 @@ export default function StoresListView({ type }: StoresListViewProps) {
                       <div className="min-w-0">
                         <Link
                           href={`/dashboard/${type}/${store.id}`}
-                          className="font-bold text-slate-900 dark:text-white text-base truncate block hover:text-accent transition-colors"
+                          className="font-bold text-ink text-base truncate block hover:text-brand transition-colors"
                           title={store.name}
                         >
                           {store.name}
                         </Link>
-                        <span className="inline-block text-[11px] font-medium text-slate-500 dark:text-white/50 truncate mt-0.5">
+                        <span className="inline-block text-[11px] font-medium text-muted truncate mt-0.5">
                           {store.category || (isFunnel ? "Tunnel mono-produit" : "E-commerce")}
                         </span>
                       </div>
@@ -610,10 +610,10 @@ export default function StoresListView({ type }: StoresListViewProps) {
                   </div>
 
                   {/* Slug / Domain preview with copy shortcut */}
-                  <div className="px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs group/domain">
-                    <div className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-white/70">
-                      <Globe className="w-3.5 h-3.5 text-slate-400 dark:text-white/40 shrink-0" />
-                      <span className="truncate font-mono text-[11px]">
+                  <div className="px-3.5 py-2.5 rounded-2xl bg-surface-2 border border-line flex items-center justify-between text-xs group/domain">
+                    <div className="flex items-center gap-2 min-w-0 text-muted">
+                      <Globe className="w-3.5 h-3.5 text-muted shrink-0" />
+                      <span className="truncate font-mono text-[11px] text-ink">
                         {store.published_url 
                           ? store.published_url.replace(/^https?:\/\//, "")
                           : store.slug ? `${store.slug}.storegen.dz` : "Non configuré"}
@@ -626,7 +626,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
                           <button
                             type="button"
                             onClick={() => handleCopyLink(liveUrl, store.id)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
+                            className="p-1 rounded-lg text-muted hover:text-ink transition-colors"
                             title="Copier le lien"
                           >
                             {copiedId === store.id ? (
@@ -639,7 +639,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
                             href={liveUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="p-1 rounded-lg text-slate-400 hover:text-accent transition-colors"
+                            className="p-1 rounded-lg text-muted hover:text-brand transition-colors"
                             title="Ouvrir dans un nouvel onglet"
                           >
                             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -650,27 +650,27 @@ export default function StoresListView({ type }: StoresListViewProps) {
                   </div>
 
                   {/* Operational Pulse Bar (Products, Orders, Revenue) */}
-                  <div className="grid grid-cols-3 gap-2 py-2 px-3 rounded-2xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] text-center">
+                  <div className="grid grid-cols-3 gap-2 py-2 px-3 rounded-2xl bg-surface-2/60 border border-line text-center">
                     <div>
-                      <span className="text-[10px] text-slate-400 dark:text-white/40 uppercase tracking-wider block font-medium">
+                      <span className="text-[10px] text-muted uppercase tracking-wider block font-medium">
                         Articles
                       </span>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      <p className="text-sm font-bold text-ink mt-0.5">
                         {store.productsCount}
                       </p>
                     </div>
 
-                    <div className="border-x border-slate-200/60 dark:border-white/[0.06]">
-                      <span className="text-[10px] text-slate-400 dark:text-white/40 uppercase tracking-wider block font-medium">
+                    <div className="border-x border-line">
+                      <span className="text-[10px] text-muted uppercase tracking-wider block font-medium">
                         Commandes
                       </span>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      <p className="text-sm font-bold text-ink mt-0.5">
                         {store.ordersCount}
                       </p>
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-slate-400 dark:text-white/40 uppercase tracking-wider block font-medium">
+                      <span className="text-[10px] text-muted uppercase tracking-wider block font-medium">
                         Revenu
                       </span>
                       <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
@@ -681,12 +681,12 @@ export default function StoresListView({ type }: StoresListViewProps) {
                 </div>
 
                 {/* Bottom Actions with Visual Hierarchy */}
-                <div className="pt-5 mt-5 border-t border-slate-100 dark:border-white/10 space-y-2.5">
+                <div className="pt-5 mt-5 border-t border-line space-y-2.5">
                   {/* Primary & Sub Actions */}
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/dashboard/${type}/${store.id}`}
-                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-accent hover:bg-accent/90 shadow-md shadow-accent/20 transition-all active:scale-95"
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-brand hover:bg-brand/90 shadow-md shadow-brand/20 transition-all active:scale-95"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>Gérer {isFunnel ? "le funnel" : "la boutique"}</span>
@@ -697,7 +697,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
                     <button
                       type="button"
                       onClick={() => setStoreToDelete(store)}
-                      className="p-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 dark:bg-white/[0.04] dark:hover:bg-rose-500/10 dark:text-white/60 dark:hover:text-rose-400 transition-colors"
+                      className="p-2.5 rounded-xl bg-surface-2 hover:bg-rose-500/10 text-muted hover:text-rose-500 transition-colors"
                       title="Supprimer"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -708,17 +708,17 @@ export default function StoresListView({ type }: StoresListViewProps) {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/dashboard/${type}/products`}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-600 dark:text-white/70 text-[11px] font-semibold transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-surface-2 hover:bg-surface text-ink text-[11px] font-semibold transition-colors border border-line"
                     >
-                      <Package className="w-3 h-3 text-slate-400" />
+                      <Package className="w-3.5 h-3.5 text-muted" />
                       <span>Produits</span>
                     </Link>
 
                     <Link
                       href={`/dashboard/${type}/orders`}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-600 dark:text-white/70 text-[11px] font-semibold transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-surface-2 hover:bg-surface text-ink text-[11px] font-semibold transition-colors border border-line"
                     >
-                      <ShoppingBag className="w-3 h-3 text-slate-400" />
+                      <ShoppingBag className="w-3.5 h-3.5 text-muted" />
                       <span>Commandes</span>
                     </Link>
 
@@ -727,7 +727,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
                         href={liveUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-xl bg-sky-50 text-sky-600 hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-400 dark:hover:bg-sky-500/20 text-[11px] font-semibold transition-colors"
+                        className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-xl bg-sky/10 text-sky-600 dark:text-sky hover:bg-sky/20 text-[11px] font-semibold transition-colors border border-sky/20"
                       >
                         <Eye className="w-3 h-3" />
                         <span>Aperçu</span>
@@ -746,19 +746,19 @@ export default function StoresListView({ type }: StoresListViewProps) {
             className={`group rounded-3xl border-2 border-dashed p-8 flex flex-col items-center justify-center text-center cursor-pointer min-h-[320px] transition-all duration-300 ${
               isStoreLimitReached
                 ? "border-amber-500/30 bg-amber-500/[0.02] hover:border-amber-500/60"
-                : "border-slate-200 dark:border-white/10 hover:border-accent dark:hover:border-accent/80 hover:bg-accent/[0.02] dark:hover:bg-accent/[0.04]"
+                : "border-line hover:border-brand hover:bg-brand/[0.02]"
             }`}
           >
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4 shadow-sm ${
               isStoreLimitReached
                 ? "bg-amber-500/10 border border-amber-500/20 text-amber-500"
-                : "bg-accent/10 border border-accent/20 text-accent"
+                : "bg-brand/10 border border-brand/20 text-brand"
             }`}>
               {isStoreLimitReached ? <Crown className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
             </div>
 
             <div className="flex items-center gap-2 justify-center">
-              <h3 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-accent transition-colors">
+              <h3 className="font-bold text-ink text-base group-hover:text-brand transition-colors">
                 {isFunnel ? "Nouveau Funnel de Vente" : "Nouvelle Boutique en Ligne"}
               </h3>
               {isStoreLimitReached && (
@@ -768,7 +768,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
               )}
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-white/50 max-w-xs mt-1.5 leading-relaxed">
+            <p className="text-xs text-muted max-w-xs mt-1.5 leading-relaxed">
               {isStoreLimitReached
                 ? "Vous avez atteint la limite de boutiques autorisée par votre forfait actuel. Passez à Pro pour débloquer jusqu'à 5 boutiques !"
                 : isFunnel
@@ -777,7 +777,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
             </p>
 
             <span className={`mt-5 inline-flex items-center gap-1.5 text-xs font-bold ${
-              isStoreLimitReached ? "text-amber-500 group-hover:underline" : "text-accent group-hover:underline"
+              isStoreLimitReached ? "text-amber-500 group-hover:underline" : "text-brand group-hover:underline"
             }`}>
               <span>{isStoreLimitReached ? "Débloquer avec le Pack Pro" : "Commencer maintenant"}</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -786,11 +786,11 @@ export default function StoresListView({ type }: StoresListViewProps) {
         </div>
       ) : (
         /* List / Table View (Stripe-Style) */
-        <div className="bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] rounded-3xl overflow-hidden shadow-sm">
+        <div className="bg-surface border border-line rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-white/[0.06] text-slate-400 dark:text-white/40 font-semibold uppercase tracking-wider text-[11px]">
+                <tr className="border-b border-line text-muted font-semibold uppercase tracking-wider text-[11px]">
                   <th className="px-6 py-4">Boutique</th>
                   <th className="px-6 py-4">Statut</th>
                   <th className="px-6 py-4">Domaine</th>
@@ -800,7 +800,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+              <tbody className="divide-y divide-line">
                 {filteredStores.map((store) => {
                   const isOnline = store.status === "published";
                   const liveUrl = store.published_url || (store.slug ? `https://store-${store.slug}.vercel.app` : null);
@@ -808,7 +808,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
                   return (
                     <tr
                       key={store.id}
-                      className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors"
+                      className="hover:bg-surface-2/50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -825,11 +825,11 @@ export default function StoresListView({ type }: StoresListViewProps) {
                           <div>
                             <Link
                               href={`/dashboard/${type}/${store.id}`}
-                              className="font-bold text-slate-900 dark:text-white text-sm hover:text-accent transition-colors"
+                              className="font-bold text-ink text-sm hover:text-brand transition-colors"
                             >
                               {store.name}
                             </Link>
-                            <p className="text-[11px] text-slate-400 dark:text-white/40">
+                            <p className="text-[11px] text-muted">
                               {store.category || (isFunnel ? "Mono-produit" : "Catalogue")}
                             </p>
                           </div>
@@ -849,27 +849,27 @@ export default function StoresListView({ type }: StoresListViewProps) {
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 font-mono text-[11px] text-slate-600 dark:text-white/70">
+                      <td className="px-6 py-4 font-mono text-[11px] text-muted">
                         {liveUrl ? (
                           <a
                             href={liveUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="hover:underline hover:text-accent inline-flex items-center gap-1"
+                            className="hover:underline hover:text-brand inline-flex items-center gap-1"
                           >
                             <span>{store.slug ? `${store.slug}.storegen.dz` : "Voir le site"}</span>
-                            <ArrowUpRight className="w-3 h-3 text-slate-400" />
+                            <ArrowUpRight className="w-3.5 h-3.5 text-muted" />
                           </a>
                         ) : (
                           "Non publié"
                         )}
                       </td>
 
-                      <td className="px-6 py-4 font-mono font-semibold text-slate-900 dark:text-white">
+                      <td className="px-6 py-4 font-mono font-semibold text-ink">
                         {store.productsCount}
                       </td>
 
-                      <td className="px-6 py-4 font-mono font-semibold text-slate-900 dark:text-white">
+                      <td className="px-6 py-4 font-mono font-semibold text-ink">
                         {store.ordersCount}
                       </td>
 
@@ -881,7 +881,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/dashboard/${type}/${store.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-xs text-white bg-accent hover:bg-accent/90 shadow-sm transition-all"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-xs text-white bg-brand hover:bg-brand/90 shadow-sm transition-all"
                           >
                             <span>Gérer</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -890,7 +890,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
                           <button
                             type="button"
                             onClick={() => setStoreToDelete(store)}
-                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                            className="p-1.5 rounded-xl text-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
                             title="Supprimer"
                           >
                             <Trash2 className="w-4 h-4" />
