@@ -160,10 +160,6 @@ export default function CreateWizard({ type }: CreateWizardProps) {
   const DRAFT_KEY = `wizard_draft_${type}_v2`;
   const DEPLOY_KEY = `pending_deploy_${type}`;
 
-  // Step definition: 3 Steps (1: Identité -> 2: Template -> 3: Produits -> Lancement)
-  const totalSteps = 3;
-
-  const [step, setStep] = useState(1);
   const [data, setData] = useState<WizardState>(() => getInitialState(type));
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -175,6 +171,13 @@ export default function CreateWizard({ type }: CreateWizardProps) {
   const genTimerRef = useRef<number | null>(null);
 
   const userPlan = useUserPlan();
+
+  // Active template label for summary
+  const activeTemplateName = useMemo(() => {
+    const tpls = getTemplatesForScope(type);
+    const found = tpls.find((t) => t.id === data.theme || t.id === data.selected_template_id);
+    return found?.name || (isFunnel ? "Crimson" : "Monochrome");
+  }, [type, data.theme, data.selected_template_id, isFunnel]);
 
   // Upgrade Modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -233,7 +236,7 @@ export default function CreateWizard({ type }: CreateWizardProps) {
     if (!isGenerating) {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(serializeWizardDraft(data)));
     }
-  }, [data, step, isGenerating, DRAFT_KEY]);
+  }, [data, isGenerating, DRAFT_KEY]);
 
   // Timer
   useEffect(() => {
@@ -258,43 +261,52 @@ export default function CreateWizard({ type }: CreateWizardProps) {
     setPendingDeploy(null);
   };
 
-  const handleNext = () => {
-    if (step === 1) {
-      const res = step1Schema.safeParse(data);
-      if (!res.success) {
-        const errs: Record<string, string> = {};
-        res.error.errors.forEach((e) => {
-          errs[e.path[0] as string] = e.message;
-        });
-        setErrors(errs);
-        toast.error("Veuillez remplir correctement les champs obligatoires");
-        return;
-      }
-      setErrors({});
-    }
-
-    // Step 3 : Validate products before launching
-    if (step === 3) {
-      const validProducts = data.products.filter((p) => p.name?.trim() && p.price && Number(p.price) >= 100);
-      if (validProducts.length === 0) {
-        toast.error(
-          isFunnel
-            ? "Ajoutez votre produit star avec un nom et un prix pour générer votre funnel."
-            : "Ajoutez au moins un produit avec un nom et un prix pour générer votre boutique."
-        );
-        return;
-      }
-      handleGenerate();
+  const handleValidateAndSubmit = () => {
+    // 1. Validation de l'Identité
+    const res = step1Schema.safeParse(data);
+    if (!res.success) {
+      const errs: Record<string, string> = {};
+      res.error.errors.forEach((e) => {
+        errs[e.path[0] as string] = e.message;
+      });
+      setErrors(errs);
+      toast.error("Veuillez renseigner correctement le nom et le numéro WhatsApp (section 1).");
+      document.getElementById("section-identity")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
+    setErrors({});
 
-    setStep((s) => Math.min(s + 1, totalSteps));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+    // 2. Validation du/des Produit(s)
+    if (isFunnel) {
+      const star = data.products[0];
+      const starName = (star?.name || data.name || "").trim();
+      const starPrice = Number(star?.price || 0);
 
-  const handleBack = () => {
-    setStep((s) => Math.max(s - 1, 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+      if (!starName || isNaN(starPrice) || starPrice < 100) {
+        toast.error("Veuillez renseigner le nom et le prix (min. 100 DA) de votre produit star à la section 3.");
+        document.getElementById("section-product")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      // Sync name if product name was blank
+      if (!star?.name?.trim() && data.name.trim()) {
+        setData((prev: any) => ({
+          ...prev,
+          products: [{ ...(prev.products[0] || {}), name: data.name.trim() }],
+        }));
+      }
+    } else {
+      const validProducts = data.products.filter(
+        (p) => p.name?.trim() && p.price && Number(p.price) >= 100
+      );
+      if (validProducts.length === 0) {
+        toast.error("Veuillez ajouter au moins un produit avec un nom et un prix (min. 100 DA) à votre catalogue (section 3).");
+        document.getElementById("section-product")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+    }
+
+    handleGenerate();
   };
 
   const POLL_DEADLINE_MS = 5 * 60 * 1000;
@@ -338,16 +350,18 @@ export default function CreateWizard({ type }: CreateWizardProps) {
     // Garde-fous validation produits obligatoires
     if (isFunnel) {
       const star = data.products[0];
-      if (!star || !star.name?.trim() || !star.price || Number(star.price) < 100) {
-        toast.error("Veuillez renseigner le nom et le prix (min. 100 DA) de votre produit star à l'étape 3.");
-        setStep(3);
+      const starName = (star?.name || data.name || "").trim();
+      const starPrice = Number(star?.price || 0);
+      if (!starName || isNaN(starPrice) || starPrice < 100) {
+        toast.error("Veuillez renseigner le nom et le prix (min. 100 DA) de votre produit star à la section 3.");
+        document.getElementById("section-product")?.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
     } else {
       const validProducts = data.products.filter((p) => p.name?.trim() && p.price && Number(p.price) >= 100);
       if (validProducts.length === 0) {
-        toast.error("Veuillez ajouter au moins un produit avec nom et prix (min. 100 DA) à votre boutique.");
-        setStep(3);
+        toast.error("Veuillez ajouter au moins un produit avec nom et prix (min. 100 DA) à votre boutique (section 3).");
+        document.getElementById("section-product")?.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
     }
@@ -584,54 +598,34 @@ export default function CreateWizard({ type }: CreateWizardProps) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 pb-32">
+    <div className="max-w-5xl mx-auto px-4 py-8 pb-32 space-y-8">
       {/* Top Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-2xl">{isFunnel ? "🎯" : "🏬"}</span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {isFunnel ? "Créer un Funnel de vente" : "Créer une Boutique multi-produits"}
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-white/55 mt-1 font-medium">
-              Étape {step} sur {totalSteps} — {
-                step === 1
-                  ? "Identité & Informations de base"
-                  : step === 2
-                  ? (isFunnel ? "Choix du design" : "Choix du modèle de boutique")
-                  : (isFunnel ? "Votre produit star" : "Votre catalogue produits")
-              }
-            </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">{isFunnel ? "🎯" : "🏬"}</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              {isFunnel ? "Créer un Funnel de vente" : "Créer une Boutique en ligne"}
+            </h1>
           </div>
-
-          <button
-            onClick={() => router.push(`/dashboard/${type}`)}
-            className="p-2.5 rounded-xl bg-slate-200/70 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-white/60 dark:hover:text-white transition-colors"
-            title="Quitter"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-white/55 mt-1 font-medium">
+            {isFunnel
+              ? "Configurez l'ensemble de votre page de vente mono-produit et lancez-la immédiatement."
+              : "Renseignez vos informations, choisissez votre modèle et ajoutez vos produits sur une seule page."}
+          </p>
         </div>
 
-        {/* Progress bar */}
-        <div className="flex gap-2">
-          {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
-            <div
-              key={s}
-              className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                s <= step
-                  ? "bg-gradient-to-r from-[#2540ea] to-[#60a5fa] shadow-sm shadow-[#2540ea]/50"
-                  : "bg-slate-200 dark:bg-white/10"
-              }`}
-            />
-          ))}
-        </div>
+        <button
+          onClick={() => router.push(`/dashboard/${type}`)}
+          className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-white/60 dark:hover:text-white transition-colors shrink-0"
+          title="Quitter"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {pendingDeploy && (
-        <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-slate-900 dark:text-white">
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-slate-900 dark:text-white">
           <div>
             <p className="text-sm font-bold text-amber-600 dark:text-amber-300">Un déploiement est en cours</p>
             <p className="text-xs text-slate-500 dark:text-white/60">Job : {pendingDeploy.jobId.slice(0, 8)}...</p>
@@ -646,105 +640,92 @@ export default function CreateWizard({ type }: CreateWizardProps) {
         </div>
       )}
 
-      {/* Main Glass Card */}
+      {/* SECTION 1: Identité & Informations */}
       <div
-        className="rounded-[28px] p-6 sm:p-10 shadow-xl dark:shadow-2xl relative overflow-hidden backdrop-blur-2xl transition-all border border-slate-200/90 dark:border-blue-400/20 bg-white/95 dark:bg-gradient-to-br dark:from-[#141c4b]/45 dark:to-[#080b1c]/95 dark:shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8),0_0_35px_rgba(37,64,234,0.15)] shadow-[0_10px_35px_-5px_rgba(15,23,42,0.08),0_0_20px_rgba(37,64,234,0.06)]"
+        id="section-identity"
+        className="rounded-3xl p-6 sm:p-8 bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm transition-colors scroll-mt-6"
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-          >
-            {/* STEP 1: Basic info with luxury/modern redesign */}
-            {step === 1 && (
-              <Step1Redesigned
-                data={data}
-                setData={setData}
-                errors={errors}
-                type={type}
-                setLogoFile={setLogoFile}
-              />
-            )}
-
-            {/* STEP 2: Funnel (Templates OR Product Landing Generator) / Store (Template Selection) */}
-            {step === 2 && (
-              <Step2TemplatesAndFunnel
-                data={data}
-                setData={setData}
-                type={type}
-                onRequireUpgrade={(themeName: string) => {
-                  setUpgradeInfo({
-                    title: "Template Premium Réservé 🎨",
-                    description: `Le template « ${themeName} » fait partie de notre catalogue Premium haute conversion. Débloquez tous les templates avec le plan Pro !`,
-                    recommendedPlan: "pro",
-                    limitType: "theme",
-                  });
-                  setShowUpgradeModal(true);
-                }}
-              />
-            )}
-
-            {/* STEP 3: Produits / Catalogue — l'utilisateur saisit ses propres données */}
-            {step === 3 && (
-              <Step3ProductEntry
-                data={data}
-                setData={setData}
-                type={type}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
+        <Step1Redesigned
+          data={data}
+          setData={setData}
+          errors={errors}
+          type={type}
+          setLogoFile={setLogoFile}
+        />
       </div>
 
-      {/* Bottom Floating Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#06060f]/90 backdrop-blur-xl border-t border-slate-200/90 dark:border-white/10 p-4 z-40 shadow-lg dark:shadow-none transition-colors">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+      {/* SECTION 2: Choix du Modèle & Design */}
+      <div
+        id="section-template"
+        className="rounded-3xl p-6 sm:p-8 bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm transition-colors scroll-mt-6"
+      >
+        <Step2TemplatesAndFunnel
+          data={data}
+          setData={setData}
+          type={type}
+          onRequireUpgrade={(themeName: string) => {
+            setUpgradeInfo({
+              title: "Template Premium Réservé 🎨",
+              description: `Le template « ${themeName} » fait partie de notre catalogue Premium haute conversion. Débloquez tous les templates avec le plan Pro !`,
+              recommendedPlan: "pro",
+              limitType: "theme",
+            });
+            setShowUpgradeModal(true);
+          }}
+        />
+      </div>
+
+      {/* SECTION 3: Produit Star ou Catalogue Produits */}
+      <div
+        id="section-product"
+        className="rounded-3xl p-6 sm:p-8 bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm transition-colors scroll-mt-6"
+      >
+        <Step3ProductEntry
+          data={data}
+          setData={setData}
+          type={type}
+        />
+      </div>
+
+      {/* Bottom Floating Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#06060f]/95 backdrop-blur-xl border-t border-slate-200/90 dark:border-white/[0.08] p-4 z-40 shadow-lg dark:shadow-[0_-8px_30px_rgba(0,0,0,0.5)] transition-colors">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-white/70 min-w-0 w-full sm:w-auto">
+            <div className="w-8 h-8 rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center text-accent shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 truncate">
+              <p className="font-bold text-slate-900 dark:text-white truncate">
+                {data.name?.trim() ? data.name : isFunnel ? "Mon Funnel" : "Ma Boutique"}
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-white/50 truncate">
+                Modèle : <span className="font-semibold text-accent dark:text-[#93c5fd]">{activeTemplateName}</span>
+                {isFunnel ? (
+                  data.products[0]?.price ? ` · ${formatPrice(Number(data.products[0].price))}` : ""
+                ) : (
+                  ` · ${data.products.length} produit${data.products.length > 1 ? "s" : ""}`
+                )}
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
-            onClick={handleBack}
-            disabled={step === 1}
-            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all ${
-              step === 1
-                ? "opacity-0 pointer-events-none"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/[0.04]"
-            }`}
+            onClick={handleValidateAndSubmit}
+            disabled={isGenerating || !!pendingDeploy}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 text-white px-8 py-3.5 rounded-xl font-bold text-sm bg-accent hover:bg-accent/90 shadow-lg shadow-accent/25 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 shrink-0"
           >
-            <ChevronLeft className="w-4 h-4" /> Précédent
+            <Sparkles className="w-4 h-4 text-sky-200" />
+            <span>
+              {pendingDeploy
+                ? "Déploiement en cours..."
+                : isGenerating
+                ? "Création en cours..."
+                : isFunnel
+                ? "Lancer mon Funnel"
+                : "Lancer ma Boutique"}
+            </span>
           </button>
-
-          {step < totalSteps ? (
-            <button
-              type="button"
-              onClick={handleNext}
-              className="flex items-center gap-2 text-white px-8 py-3.5 rounded-xl font-bold text-sm shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
-              style={{
-                background: "linear-gradient(135deg, #2540ea 0%, #1a2ca3 100%)",
-                boxShadow: "0 8px 24px -4px rgba(37, 64, 234, 0.6)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
-            >
-              <span>Continuer</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={isGenerating || !!pendingDeploy}
-              className="flex items-center gap-2 text-white px-9 py-3.5 rounded-xl font-bold text-sm shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
-              style={{
-                background: "linear-gradient(135deg, #2540ea 0%, #1a2ca3 100%)",
-                boxShadow: "0 8px 28px -4px rgba(37, 64, 234, 0.7)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
-            >
-              <Sparkles className="w-4 h-4 text-[#93c5fd]" />
-              <span>{pendingDeploy ? "Déploiement en cours" : isFunnel ? "Lancer mon Funnel" : "Lancer ma Boutique"}</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -796,32 +777,36 @@ function Step1Redesigned({
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Title & Badge */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80 dark:border-white/10">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-            <Store className="w-6 h-6 text-accent dark:text-[#93c5fd]" />
-            <span>Identité & Informations</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-white/55 mt-1">
-            {isFunnel
-              ? "Configurez les informations maîtresses de votre page de vente mono-produit."
-              : "Renseignez le nom officiel, la catégorie et le contact de votre boutique."}
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-200/90 dark:border-white/[0.08]">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center text-accent shrink-0">
+            <Store className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              1. Identité & Informations
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50 mt-0.5">
+              {isFunnel
+                ? "Configurez les informations maîtresses de votre page de vente mono-produit."
+                : "Renseignez le nom officiel, la catégorie et le contact de votre boutique."}
+            </p>
+          </div>
         </div>
-        <span className="self-start sm:self-center text-xs font-bold px-3 py-1 rounded-full bg-accent/10 dark:bg-[#2540ea]/20 text-accent dark:text-[#93c5fd] border border-accent/20 dark:border-[#2540ea]/40">
+        <span className="self-start sm:self-center text-xs font-bold px-3 py-1 rounded-full bg-accent/10 dark:bg-accent/20 text-accent dark:text-[#93c5fd] border border-accent/20 dark:border-accent/30">
           {isFunnel ? "🎯 Mode Funnel" : "🏬 Mode Boutique"}
         </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column: Form Fields */}
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Name */}
           <div className="space-y-1.5 text-left">
-            <label className="text-xs font-bold text-slate-700 dark:text-white/90 flex items-center justify-between">
-              <span>{isFunnel ? "Nom du funnel (Produit phare)" : "Nom de la boutique"}</span>
+            <label className="text-xs font-bold text-slate-700 dark:text-white/80 flex items-center justify-between">
+              <span>{isFunnel ? "Nom du funnel (Produit phare)" : "Nom de la boutique"} <span className="text-red-500">*</span></span>
               <span className="text-[10px] text-slate-400 dark:text-white/40">Obligatoire</span>
             </label>
             <div className="relative flex items-center">
@@ -831,8 +816,8 @@ function Step1Redesigned({
                 value={data.name}
                 onChange={(e) => setData((p: any) => ({ ...p, name: e.target.value }))}
                 className={cn(
-                  "w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/35 bg-slate-50/80 dark:bg-[#060612]/70 border focus:outline-none focus:bg-white dark:focus:bg-[#060612]/90 transition-all",
-                  errors.name ? "border-rose-500" : "border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd]"
+                  "w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 bg-slate-50 dark:bg-white/[0.04] border focus:outline-none focus:bg-white dark:focus:bg-white/[0.06] transition-all",
+                  errors.name ? "border-rose-500" : "border-slate-200/90 dark:border-white/10 focus:border-accent"
                 )}
               />
             </div>
@@ -841,14 +826,14 @@ function Step1Redesigned({
 
           {/* Category */}
           <div className="space-y-1.5 text-left">
-            <label className="text-xs font-bold text-slate-700 dark:text-white/90">Catégorie principale</label>
+            <label className="text-xs font-bold text-slate-700 dark:text-white/80">Catégorie principale</label>
             <select
               value={data.category}
               onChange={(e) => setData((p: any) => ({ ...p, category: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white bg-slate-50/80 dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none transition-all cursor-pointer"
+              className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-white/[0.06] focus:outline-none transition-all cursor-pointer"
             >
               {CATEGORIES.map((c) => (
-                <option key={c} value={c} className="bg-white dark:bg-[#0b0b14] text-slate-900 dark:text-white">
+                <option key={c} value={c} className="bg-white dark:bg-[#0c0d1e] text-slate-900 dark:text-white">
                   {c}
                 </option>
               ))}
@@ -857,8 +842,8 @@ function Step1Redesigned({
 
           {/* WhatsApp Phone */}
           <div className="space-y-1.5 text-left">
-            <label className="text-xs font-bold text-slate-700 dark:text-white/90 flex items-center gap-1.5">
-              <span>Numéro WhatsApp (Algérie 🇩🇿)</span>
+            <label className="text-xs font-bold text-slate-700 dark:text-white/80 flex items-center gap-1.5">
+              <span>Numéro WhatsApp (Algérie 🇩🇿) <span className="text-red-500">*</span></span>
             </label>
             <div className="relative flex items-center">
               <input
@@ -867,8 +852,8 @@ function Step1Redesigned({
                 value={data.whatsapp_phone}
                 onChange={(e) => setData((p: any) => ({ ...p, whatsapp_phone: e.target.value }))}
                 className={cn(
-                  "w-full px-4 py-3 pl-11 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/35 bg-slate-50/80 dark:bg-[#060612]/70 border focus:outline-none focus:bg-white dark:focus:bg-[#060612]/90 transition-all",
-                  errors.whatsapp_phone ? "border-rose-500" : "border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd]"
+                  "w-full px-4 py-3 pl-11 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 bg-slate-50 dark:bg-white/[0.04] border focus:outline-none focus:bg-white dark:focus:bg-white/[0.06] transition-all",
+                  errors.whatsapp_phone ? "border-rose-500" : "border-slate-200/90 dark:border-white/10 focus:border-accent"
                 )}
               />
               <Phone className="w-4 h-4 text-slate-400 dark:text-white/40 absolute left-3.5 pointer-events-none" />
@@ -884,7 +869,7 @@ function Step1Redesigned({
           {/* Description */}
           <div className="space-y-1.5 text-left">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-slate-700 dark:text-white/90">
+              <label className="text-xs font-bold text-slate-700 dark:text-white/80">
                 {isFunnel ? "Accroche principale du funnel" : "Courte description"}
               </label>
               <span className="text-[10px] text-slate-400 dark:text-white/40">{data.description?.length || 0}/300</span>
@@ -899,16 +884,15 @@ function Step1Redesigned({
               value={data.description}
               onChange={(e) => setData((p: any) => ({ ...p, description: e.target.value }))}
               maxLength={300}
-              className="w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/35 bg-slate-50/80 dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none focus:bg-white dark:focus:bg-[#060612]/90 transition-all"
+              className="w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 bg-slate-50 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-white/[0.06] focus:outline-none transition-all"
             />
           </div>
         </div>
 
-        {/* Right Column: Visual Brand Identity (Logo + Color) */}
+        {/* Right Column: Visual Brand Identity (Logo) */}
         <div className="space-y-5 flex flex-col justify-start">
-          {/* Logo Dropzone */}
           <div className="space-y-1.5 text-left h-full flex flex-col">
-            <label className="text-xs font-bold text-slate-700 dark:text-white/90 flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 dark:text-white/80 flex items-center justify-between">
               <span>Logo de la marque</span>
               <span className="text-[10px] text-slate-400 dark:text-white/40">Optionnel</span>
             </label>
@@ -919,14 +903,14 @@ function Step1Redesigned({
                 "border-2 border-dashed rounded-2xl p-5 transition-all cursor-pointer flex flex-col items-center justify-center text-center relative overflow-hidden group flex-1 min-h-[190px]",
                 isLogoDrag
                   ? "border-accent bg-accent/10"
-                  : "border-slate-300 dark:border-white/15 hover:border-accent dark:hover:border-white/35 bg-slate-50/60 hover:bg-slate-100/50 dark:bg-white/[0.02]",
-                data.logo_url && "border-accent/40 bg-accent/5"
+                  : "border-slate-300 dark:border-white/15 hover:border-accent dark:hover:border-accent/60 bg-slate-50/50 hover:bg-slate-100/50 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]",
+                data.logo_url && "border-accent/40 bg-accent/5 dark:bg-accent/10"
               )}
             >
               <input {...getLogoInput()} />
               {data.logo_url ? (
                 <div className="flex flex-col items-center gap-2">
-                  <div className="relative w-24 h-24 rounded-2xl bg-white dark:bg-[#060612] p-2 border border-slate-200 dark:border-white/20 shadow-md">
+                  <div className="relative w-24 h-24 rounded-2xl bg-white dark:bg-[#0c0d1e] p-2 border border-slate-200/90 dark:border-white/10 shadow-sm">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={data.logo_url}
@@ -940,7 +924,7 @@ function Step1Redesigned({
                 </div>
               ) : (
                 <>
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 flex items-center justify-center text-accent dark:text-[#93c5fd] mb-2 group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 flex items-center justify-center text-accent dark:text-[#93c5fd] mb-2 group-hover:scale-105 transition-transform">
                     <ImagePlus className="w-6 h-6" />
                   </div>
                   <p className="text-xs font-bold text-slate-800 dark:text-white">Déposer votre logo ici</p>
@@ -977,35 +961,39 @@ function Step2TemplatesAndFunnel({
   }, [isFunnel]);
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80 dark:border-white/10 text-left">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-            <Layers className="w-6 h-6 text-accent dark:text-[#93c5fd]" />
-            <span>{isFunnel ? "Modèle du Funnel & Produit" : "Choisissez votre Template de Boutique"}</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-white/55 mt-1">
-            {isFunnel
-              ? "Thèmes calibrés pour la vente mono-produit et la conversion directe COD."
-              : "Thèmes calibrés pour mettre en valeur un catalogue complet multi-produits."}
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-200/90 dark:border-white/[0.08] text-left">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center text-accent shrink-0">
+            <Layers className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              2. Choix du Modèle & Design
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50 mt-0.5">
+              {isFunnel
+                ? "Thèmes calibrés pour la vente mono-produit et la conversion directe COD."
+                : "Thèmes calibrés pour mettre en valeur un catalogue complet multi-produits."}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Grille unifiée — tous les templates dans une seule fenêtre */}
       <div className="space-y-4">
-          <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 text-xs text-slate-600 dark:text-white/70">
-            <span className="w-2 h-2 rounded-full bg-accent dark:bg-[#38bdf8] shrink-0" />
-            <span>
-              {isFunnel
-                ? `Tous les templates (${availableTemplates.length}) — Conçus pour les drops rapides, visuels immersifs et commande COD immédiate.`
-                : `Tous les templates (${availableTemplates.length}) — Conçus pour les catalogues multi-produits, la navigation par rayons et les paniers.`}
-            </span>
-          </div>
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/90 dark:border-white/[0.08] text-xs text-slate-600 dark:text-white/70">
+          <span className="w-2 h-2 rounded-full bg-accent shrink-0" />
+          <span>
+            {isFunnel
+              ? `Tous les templates (${availableTemplates.length}) — Conçus pour les drops rapides, visuels immersifs et commande COD immédiate.`
+              : `Tous les templates (${availableTemplates.length}) — Conçus pour les catalogues multi-produits, la navigation par rayons et les paniers.`}
+          </span>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left">
-            {availableTemplates.map((tpl: TemplateData) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left">
+          {availableTemplates.map((tpl: TemplateData) => {
             const isSelected = data.theme === tpl.id;
             const isPremium = !FREE_THEMES.has(tpl.id);
             const isLocked = isPremium && !userPlan.canUseAllThemes;
@@ -1027,8 +1015,8 @@ function Step2TemplatesAndFunnel({
                 className={cn(
                   "p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative flex flex-col justify-between group",
                   isSelected
-                    ? "border-accent dark:border-[#60a5fa] bg-gradient-to-b from-accent/10 to-accent/5 dark:from-[#2540ea]/20 dark:to-[#0e1338] shadow-lg shadow-accent/20 dark:shadow-[#2540ea]/30 ring-2 ring-accent/60 scale-[1.01]"
-                    : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] hover:border-accent/40 dark:hover:border-white/25 hover:bg-white dark:hover:bg-white/[0.04] hover:shadow-md dark:hover:shadow-none"
+                    ? "border-accent ring-2 ring-accent/60 bg-accent/5 dark:bg-accent/10 shadow-lg shadow-accent/15 scale-[1.01]"
+                    : "border-slate-200/90 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] hover:border-accent/40 hover:bg-white dark:hover:bg-white/[0.04]"
                 )}
               >
                 {/* Top Badge & Indicator */}
@@ -1697,7 +1685,7 @@ function Step3FunnelStarProduct({
               placeholder="Ex : Écouteurs Sans Fil Pro Bass IPX7"
               value={currentProduct.name || ""}
               onChange={(e) => updateProductField("name", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/35 bg-slate-50/80 dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none focus:bg-white dark:focus:bg-[#060612]/90"
+              className="w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-slate-50 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-[#0c0d1e] focus:outline-none transition-all"
             />
           </div>
 
@@ -1712,7 +1700,7 @@ function Step3FunnelStarProduct({
                 placeholder="Ex : 4900"
                 value={currentProduct.price || ""}
                 onChange={(e) => updateProductField("price", Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/35 bg-slate-50/80 dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none focus:bg-white dark:focus:bg-[#060612]/90"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-slate-50 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-[#0c0d1e] focus:outline-none transition-all"
               />
             </div>
 
@@ -1723,7 +1711,7 @@ function Step3FunnelStarProduct({
                 placeholder="Ex : 6900"
                 value={currentProduct.compare_price || ""}
                 onChange={(e) => updateProductField("compare_price", Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/35 bg-slate-50/80 dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none focus:bg-white dark:focus:bg-[#060612]/90"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-slate-50 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-[#0c0d1e] focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -1736,7 +1724,7 @@ function Step3FunnelStarProduct({
               placeholder="Ex : Profitez d'une qualité audio exceptionnelle avec réduction de bruit active et autonomie de 30 heures..."
               value={currentProduct.description || ""}
               onChange={(e) => updateProductField("description", e.target.value)}
-              className="w-full px-4 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/35 bg-slate-50/80 dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none focus:bg-white dark:focus:bg-[#060612]/90 resize-none"
+              className="w-full px-4 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-slate-50 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-[#0c0d1e] focus:outline-none transition-all resize-none"
             />
           </div>
 
@@ -1749,7 +1737,7 @@ function Step3FunnelStarProduct({
 
             {(currentProduct.benefits || ["", "", ""]).map((ben, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-accent/15 dark:bg-[#2540ea]/20 text-accent dark:text-[#93c5fd] flex items-center justify-center text-xs font-bold shrink-0">
+                <span className="w-5 h-5 rounded-full bg-accent/15 text-accent flex items-center justify-center text-xs font-bold shrink-0">
                   {i + 1}
                 </span>
                 <input
@@ -1757,21 +1745,21 @@ function Step3FunnelStarProduct({
                   placeholder={`Bénéfice ${i + 1}...`}
                   value={ben}
                   onChange={(e) => updateBenefit(i, e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/35 bg-slate-50/80 dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none focus:bg-white dark:focus:bg-[#060612]/90"
+                  className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-slate-50 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-[#0c0d1e] focus:outline-none transition-all"
                 />
               </div>
             ))}
           </div>
 
           {/* Options & Variantes (Tailles, Couleurs...) */}
-          <div className="pt-3 border-t border-slate-200 dark:border-white/10 space-y-3">
+          <div className="pt-3 border-t border-slate-200/80 dark:border-white/10 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <label className="text-xs font-bold text-slate-800 dark:text-white/90 flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-accent dark:text-[#93c5fd]" />
+                  <Layers className="w-3.5 h-3.5 text-accent" />
                   <span>Options & Variantes (Tailles, Couleurs...)</span>
                   {options.length > 0 && (
-                    <span className="px-2 py-0.2 rounded-full bg-accent/10 dark:bg-[#2540ea]/30 text-accent dark:text-[#93c5fd] text-[10px] font-bold border border-accent/20 dark:border-[#2540ea]/40">
+                    <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] font-bold border border-accent/20">
                       {options.length} {options.length > 1 ? "groupes" : "groupe"}
                     </span>
                   )}
@@ -1786,7 +1774,7 @@ function Step3FunnelStarProduct({
                 <button
                   type="button"
                   onClick={addSizePreset}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-accent/10 hover:bg-accent/20 text-accent dark:bg-[#2540ea]/20 dark:hover:bg-[#2540ea]/30 dark:text-[#93c5fd] border border-accent/30 dark:border-[#2540ea]/40 flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 flex items-center gap-1 transition-colors"
                   title="Ajouter automatiquement Taille (S, M, L, XL)"
                 >
                   <Plus className="w-3 h-3" />
@@ -1795,7 +1783,7 @@ function Step3FunnelStarProduct({
                 <button
                   type="button"
                   onClick={addColorPreset}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 dark:border-purple-500/40 flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/20 flex items-center gap-1 transition-colors"
                   title="Ajouter automatiquement Nuancier Couleur"
                 >
                   <Plus className="w-3 h-3" />
@@ -1804,7 +1792,7 @@ function Step3FunnelStarProduct({
                 <button
                   type="button"
                   onClick={addCustomOption}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white/80 border border-slate-300 dark:border-white/15 flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-white/80 border border-slate-200/90 dark:border-white/10 flex items-center gap-1 transition-colors"
                   title="Ajouter une option sur mesure"
                 >
                   <Plus className="w-3 h-3" />
@@ -1815,7 +1803,7 @@ function Step3FunnelStarProduct({
 
             {/* Empty state */}
             {options.length === 0 ? (
-              <div className="p-3.5 rounded-xl border border-dashed border-slate-200 dark:border-white/15 bg-slate-50/60 dark:bg-white/[0.02] flex items-center justify-between gap-3">
+              <div className="p-3.5 rounded-xl border border-dashed border-slate-200/90 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between gap-3">
                 <p className="text-xs text-slate-500 dark:text-white/50">
                   Ce produit est actuellement vendu sans variante (modèle standard unique).
                 </p>
@@ -1823,7 +1811,7 @@ function Step3FunnelStarProduct({
                   <button
                     type="button"
                     onClick={addSizePreset}
-                    className="text-xs font-semibold text-accent dark:text-[#93c5fd] hover:underline underline-offset-2"
+                    className="text-xs font-semibold text-accent hover:underline underline-offset-2"
                   >
                     Activer Tailles
                   </button>
@@ -1831,7 +1819,7 @@ function Step3FunnelStarProduct({
                   <button
                     type="button"
                     onClick={addColorPreset}
-                    className="text-xs font-semibold text-accent dark:text-[#93c5fd] hover:underline underline-offset-2"
+                    className="text-xs font-semibold text-accent hover:underline underline-offset-2"
                   >
                     Activer Couleurs
                   </button>
@@ -1842,7 +1830,7 @@ function Step3FunnelStarProduct({
                 {options.map((opt, optIdx) => (
                   <div
                     key={optIdx}
-                    className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-white/[0.03] border border-slate-200 dark:border-white/15 space-y-3 relative group"
+                    className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200/90 dark:border-white/10 space-y-3 relative group"
                   >
                     {/* Option Top Bar */}
                     <div className="flex items-center justify-between gap-2">
@@ -1852,11 +1840,11 @@ function Step3FunnelStarProduct({
                           value={opt.name}
                           onChange={(e) => updateOptionName(optIdx, e.target.value)}
                           placeholder="Nom de l'option (ex: Taille, Couleur, Modèle)"
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-900 dark:text-white bg-white dark:bg-[#060612]/80 border border-slate-200 dark:border-white/20 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none w-full max-w-[200px]"
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-900 dark:text-white bg-white dark:bg-white/[0.05] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:outline-none w-full max-w-[200px]"
                         />
 
                         {/* Type toggle */}
-                        <div className="flex items-center bg-slate-200/80 dark:bg-[#060612]/60 p-0.5 rounded-lg border border-slate-300 dark:border-white/15 text-[10px]">
+                        <div className="flex items-center bg-slate-200/70 dark:bg-white/[0.06] p-0.5 rounded-lg border border-slate-300/60 dark:border-white/10 text-[10px]">
                           <button
                             type="button"
                             onClick={() => updateOptionType(optIdx, "chip")}
@@ -1895,12 +1883,12 @@ function Step3FunnelStarProduct({
                     </div>
 
                     {/* Option Values */}
-                    <div className="space-y-2 pt-1 border-t border-slate-200/80 dark:border-white/5">
+                    <div className="space-y-2 pt-1 border-t border-slate-200/70 dark:border-white/5">
                       <div className="flex flex-wrap items-center gap-2">
                         {opt.values.map((val, valIdx) => (
                           <div
                             key={valIdx}
-                            className="flex items-center gap-1.5 p-1.5 pl-2 rounded-xl bg-white dark:bg-[#060612]/90 border border-slate-200 dark:border-white/15 shadow-sm"
+                            className="flex items-center gap-1.5 p-1.5 pl-2 rounded-xl bg-white dark:bg-white/[0.05] border border-slate-200/90 dark:border-white/10 shadow-xs"
                           >
                             {/* Color picker for swatch */}
                             {opt.type === "swatch" && (
@@ -1928,7 +1916,7 @@ function Step3FunnelStarProduct({
                                 updateOptionValue(optIdx, valIdx, "label", e.target.value)
                               }
                               placeholder={opt.type === "swatch" ? "Nom couleur" : "Taille"}
-                              className="w-20 px-2 py-0.5 rounded-md text-xs text-slate-900 dark:text-white bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none"
+                              className="w-20 px-2 py-0.5 rounded-md text-xs text-slate-900 dark:text-white bg-slate-50 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:outline-none"
                             />
 
                             {/* Remove value button */}
@@ -1949,7 +1937,7 @@ function Step3FunnelStarProduct({
                         <button
                           type="button"
                           onClick={() => addOptionValue(optIdx)}
-                          className="px-2.5 py-1.5 rounded-xl border border-dashed border-slate-300 dark:border-white/20 hover:border-accent text-[11px] font-semibold text-accent dark:text-[#93c5fd] hover:text-accent-dark dark:hover:text-white bg-slate-100/70 hover:bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-[#2540ea]/10 flex items-center gap-1 transition-colors"
+                          className="px-2.5 py-1.5 rounded-xl border border-dashed border-slate-300 dark:border-white/20 hover:border-accent text-[11px] font-semibold text-accent hover:text-accent-dark bg-slate-100/70 hover:bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-accent/10 flex items-center gap-1 transition-colors"
                         >
                           <Plus className="w-3 h-3" />
                           Ajouter une valeur
@@ -2046,9 +2034,9 @@ function Step3BoutiqueCatalog({
   return (
     <div className="space-y-6 text-left animate-in fade-in duration-300">
       {/* Banner */}
-      <div className="p-4 rounded-2xl bg-accent/10 border border-accent/25 dark:border-[#2540ea]/30 flex items-start justify-between gap-4">
+      <div className="p-4 rounded-2xl bg-accent/10 border border-accent/20 flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <Store className="w-5 h-5 text-accent dark:text-[#93c5fd] shrink-0 mt-0.5" />
+          <Store className="w-5 h-5 text-accent shrink-0 mt-0.5" />
           <div className="text-xs text-slate-700 dark:text-white/80 leading-relaxed">
             <span className="font-bold text-slate-900 dark:text-white">Catalogue Initial de votre Boutique : </span>
             Ajoutez au moins un produit avec son nom, son prix réel et sa photo pour composer votre vitrine.
@@ -2056,7 +2044,7 @@ function Step3BoutiqueCatalog({
           </div>
         </div>
 
-        <div className="shrink-0 px-3 py-1.5 rounded-xl bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 text-right shadow-xs">
+        <div className="shrink-0 px-3 py-1.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 text-right shadow-xs">
           <span className="text-[11px] text-slate-500 dark:text-white/50 block">Articles ajoutés</span>
           <span className={cn("text-sm font-extrabold", productsCount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400")}>
             {productsCount} / min. 1
@@ -2065,10 +2053,10 @@ function Step3BoutiqueCatalog({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ADD PRODUCT FORM (5 cols) */}
-        <div className="lg:col-span-6 p-5 rounded-2xl bg-slate-50/70 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-white/10 pb-3">
-            <Package className="w-4 h-4 text-accent dark:text-[#93c5fd]" />
+        {/* ADD PRODUCT FORM (6 cols) */}
+        <div className="lg:col-span-6 p-5 rounded-2xl bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200/90 dark:border-white/10 space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 dark:border-white/10 pb-3">
+            <Package className="w-4 h-4 text-accent" />
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Ajouter un article au catalogue</h3>
           </div>
 
@@ -2081,7 +2069,7 @@ function Step3BoutiqueCatalog({
                 "border-2 border-dashed rounded-xl p-3 text-center cursor-pointer transition-colors flex items-center justify-center gap-3",
                 isDragActive
                   ? "border-accent bg-accent/10"
-                  : "border-slate-300 dark:border-white/15 hover:border-accent dark:hover:border-white/30 bg-white dark:bg-black/20"
+                  : "border-slate-300 dark:border-white/15 hover:border-accent dark:hover:border-white/30 bg-white dark:bg-white/[0.03]"
               )}
             >
               <input {...getInputProps()} />
@@ -2108,7 +2096,7 @@ function Step3BoutiqueCatalog({
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-slate-500 dark:text-white/50 text-xs py-1">
-                  <ImagePlus className="w-4 h-4 text-accent dark:text-[#93c5fd]" />
+                  <ImagePlus className="w-4 h-4 text-accent" />
                   <span>Glissez une image ou cliquez pour parcourir</span>
                 </div>
               )}
@@ -2125,7 +2113,7 @@ function Step3BoutiqueCatalog({
               placeholder="Ex : Veste Bomber Urbain Kaki"
               value={draftName}
               onChange={(e) => setDraftName(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-white dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none"
+              className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-white dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-[#0c0d1e] focus:outline-none transition-all"
             />
           </div>
 
@@ -2140,7 +2128,7 @@ function Step3BoutiqueCatalog({
                 placeholder="Ex : 5500"
                 value={draftPrice}
                 onChange={(e) => setDraftPrice(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-white dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none"
+                className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-white dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-[#0c0d1e] focus:outline-none transition-all"
               />
             </div>
             <div className="space-y-1">
@@ -2150,7 +2138,7 @@ function Step3BoutiqueCatalog({
                 placeholder="Ex : 7500"
                 value={draftComparePrice}
                 onChange={(e) => setDraftComparePrice(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-white dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none"
+                className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-white dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-[#0c0d1e] focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -2161,10 +2149,10 @@ function Step3BoutiqueCatalog({
             <select
               value={draftCategory}
               onChange={(e) => setDraftCategory(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white bg-white dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none cursor-pointer"
+              className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white bg-white dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:outline-none cursor-pointer"
             >
               {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat} className="bg-white dark:bg-[#0b0b14] text-slate-900 dark:text-white">
+                <option key={cat} value={cat} className="bg-white dark:bg-[#0c0d1e] text-slate-900 dark:text-white">
                   {cat}
                 </option>
               ))}
@@ -2179,7 +2167,7 @@ function Step3BoutiqueCatalog({
               placeholder="Ex : Coupe droite, tissu résistant, disponible en plusieurs tailles."
               value={draftDescription}
               onChange={(e) => setDraftDescription(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-white dark:bg-[#060612]/70 border border-slate-200 dark:border-white/15 focus:border-accent dark:focus:border-[#93c5fd] focus:outline-none"
+              className="w-full px-3.5 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30 bg-white dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 focus:border-accent focus:bg-white dark:focus:bg-[#0c0d1e] focus:outline-none transition-all"
             />
           </div>
 
@@ -2187,7 +2175,7 @@ function Step3BoutiqueCatalog({
           <button
             type="button"
             onClick={handleAddProduct}
-            className="w-full py-2.5 rounded-xl font-bold text-xs text-white flex items-center justify-center gap-2 transition-all bg-accent hover:bg-[#1a2ca3] shadow-md shadow-accent/30 active:scale-[0.99]"
+            className="w-full py-2.5 rounded-xl font-bold text-xs text-white flex items-center justify-center gap-2 transition-all bg-accent hover:bg-accent-dark shadow-md shadow-accent/25 active:scale-[0.99]"
           >
             <Plus className="w-4 h-4" />
             <span>Ajouter ce produit au catalogue</span>
@@ -2209,8 +2197,8 @@ function Step3BoutiqueCatalog({
           </div>
 
           {productsCount === 0 ? (
-            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-8 text-center space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 flex items-center justify-center mx-auto text-slate-400 dark:text-white/40">
+            <div className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-8 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 flex items-center justify-center mx-auto text-slate-400 dark:text-white/40">
                 <Package className="w-6 h-6" />
               </div>
               <p className="text-xs font-semibold text-slate-700 dark:text-white/70">Aucun produit dans le catalogue pour l&apos;instant</p>
@@ -2228,10 +2216,10 @@ function Step3BoutiqueCatalog({
                 return (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 group hover:border-slate-300 dark:hover:border-white/20 shadow-xs transition-all"
+                    className="p-3.5 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-200/90 dark:border-white/10 flex items-center justify-between gap-3 group hover:border-slate-300 dark:hover:border-white/20 shadow-xs transition-all"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 flex items-center justify-center overflow-hidden shrink-0">
                         {imgUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={imgUrl} alt={p.name} className="w-full h-full object-cover" />
@@ -2252,7 +2240,7 @@ function Step3BoutiqueCatalog({
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs font-extrabold text-accent dark:text-[#93c5fd]">{formatPrice(Number(p.price || 0))}</span>
+                      <span className="text-xs font-extrabold text-accent">{formatPrice(Number(p.price || 0))}</span>
                       <button
                         type="button"
                         onClick={() => handleDeleteProduct(idx)}
