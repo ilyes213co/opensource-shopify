@@ -172,12 +172,6 @@ export default function CreateWizard({ type }: CreateWizardProps) {
 
   const userPlan = useUserPlan();
 
-  // Active template label for summary
-  const activeTemplateName = useMemo(() => {
-    const tpls = getTemplatesForScope(type);
-    const found = tpls.find((t) => t.id === data.theme || t.id === data.selected_template_id);
-    return found?.name || (isFunnel ? "Crimson" : "Monochrome");
-  }, [type, data.theme, data.selected_template_id, isFunnel]);
 
   // Upgrade Modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -598,7 +592,7 @@ export default function CreateWizard({ type }: CreateWizardProps) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 pb-32 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 pb-16 space-y-8">
       {/* Top Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -687,46 +681,33 @@ export default function CreateWizard({ type }: CreateWizardProps) {
         />
       </div>
 
-      {/* Bottom Floating Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#06060f]/95 backdrop-blur-xl border-t border-slate-200/90 dark:border-white/[0.08] p-4 z-40 shadow-lg dark:shadow-[0_-8px_30px_rgba(0,0,0,0.5)] transition-colors">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-white/70 min-w-0 w-full sm:w-auto">
-            <div className="w-8 h-8 rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center text-accent shrink-0">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 truncate">
-              <p className="font-bold text-slate-900 dark:text-white truncate">
-                {data.name?.trim() ? data.name : isFunnel ? "Mon Funnel" : "Ma Boutique"}
-              </p>
-              <p className="text-[11px] text-slate-500 dark:text-white/50 truncate">
-                Modèle : <span className="font-semibold text-accent dark:text-[#93c5fd]">{activeTemplateName}</span>
-                {isFunnel ? (
-                  data.products[0]?.price ? ` · ${formatPrice(Number(data.products[0].price))}` : ""
-                ) : (
-                  ` · ${data.products.length} produit${data.products.length > 1 ? "s" : ""}`
-                )}
-              </p>
-            </div>
-          </div>
+      {/* Action en fin de formulaire */}
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+        <button
+          type="button"
+          onClick={() => router.push(`/dashboard/${type}`)}
+          className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-sm text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all text-center"
+        >
+          Annuler
+        </button>
 
-          <button
-            type="button"
-            onClick={handleValidateAndSubmit}
-            disabled={isGenerating || !!pendingDeploy}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 text-white px-8 py-3.5 rounded-xl font-bold text-sm bg-accent hover:bg-accent/90 shadow-lg shadow-accent/25 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 shrink-0"
-          >
-            <Sparkles className="w-4 h-4 text-sky-200" />
-            <span>
-              {pendingDeploy
-                ? "Déploiement en cours..."
-                : isGenerating
-                ? "Création en cours..."
-                : isFunnel
-                ? "Lancer mon Funnel"
-                : "Lancer ma Boutique"}
-            </span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleValidateAndSubmit}
+          disabled={isGenerating || !!pendingDeploy}
+          className="w-full sm:w-auto flex items-center justify-center gap-2.5 text-white px-8 py-3.5 rounded-xl font-bold text-sm bg-accent hover:bg-accent/90 shadow-lg shadow-accent/25 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+        >
+          <Sparkles className="w-4 h-4 text-sky-200" />
+          <span>
+            {pendingDeploy
+              ? "Déploiement en cours..."
+              : isGenerating
+              ? "Création en cours..."
+              : isFunnel
+              ? "Lancer mon Funnel"
+              : "Lancer ma Boutique"}
+          </span>
+        </button>
       </div>
 
       {/* Upgrade Modal en cas de dépassement de quota */}
