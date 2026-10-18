@@ -635,9 +635,9 @@ export default function CreateWizard({ type }: CreateWizardProps) {
       )}
 
       {/* SECTION 1: Identité & Informations */}
-      <div
+      <section
         id="section-identity"
-        className="rounded-3xl p-6 sm:p-8 bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm transition-colors scroll-mt-6"
+        className="scroll-mt-6"
       >
         <Step1Redesigned
           data={data}
@@ -646,12 +646,12 @@ export default function CreateWizard({ type }: CreateWizardProps) {
           type={type}
           setLogoFile={setLogoFile}
         />
-      </div>
+      </section>
 
       {/* SECTION 2: Choix du Modèle & Design */}
-      <div
+      <section
         id="section-template"
-        className="rounded-3xl p-6 sm:p-8 bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm transition-colors scroll-mt-6"
+        className="scroll-mt-6 pt-10 border-t border-slate-200/80 dark:border-white/[0.08]"
       >
         <Step2TemplatesAndFunnel
           data={data}
@@ -667,19 +667,19 @@ export default function CreateWizard({ type }: CreateWizardProps) {
             setShowUpgradeModal(true);
           }}
         />
-      </div>
+      </section>
 
       {/* SECTION 3: Produit Star ou Catalogue Produits */}
-      <div
+      <section
         id="section-product"
-        className="rounded-3xl p-6 sm:p-8 bg-white dark:bg-[#0c0d1e] border border-slate-200/90 dark:border-white/[0.08] shadow-sm transition-colors scroll-mt-6"
+        className="scroll-mt-6 pt-10 border-t border-slate-200/80 dark:border-white/[0.08]"
       >
         <Step3ProductEntry
           data={data}
           setData={setData}
           type={type}
         />
-      </div>
+      </section>
 
       {/* Action en fin de formulaire */}
       <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
@@ -1449,8 +1449,25 @@ function Step3FunnelStarProduct({
 
   return (
     <div className="space-y-6 text-left animate-in fade-in duration-300">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-200/90 dark:border-white/[0.08] text-left">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center text-accent shrink-0">
+            <Package className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              3. Produit Star & Offre
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50 mt-0.5">
+              Configurez le produit vedette au cœur de votre page de vente mono-produit.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Reassurance Banner */}
-      <div className="p-4 rounded-2xl bg-accent/10 border border-accent/25 dark:border-[#2540ea]/30 flex items-start gap-3">
+      <div className="p-4 rounded-2xl bg-accent/10 border border-accent/20 flex items-start gap-3">
         <Sparkles className="w-5 h-5 text-accent dark:text-[#93c5fd] shrink-0 mt-0.5" />
         <div className="text-xs text-slate-700 dark:text-white/80 leading-relaxed">
           <span className="font-bold text-slate-900 dark:text-white">Votre Produit Star en vedette : </span>
@@ -2011,6 +2028,23 @@ function Step3BoutiqueCatalog({
 
   return (
     <div className="space-y-6 text-left animate-in fade-in duration-300">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-200/90 dark:border-white/[0.08] text-left">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center text-accent shrink-0">
+            <Package className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              3. Catalogue Initial de Produits
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50 mt-0.5">
+              Ajoutez les premiers articles avec leurs prix et photos pour composer votre vitrine.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Banner */}
       <div className="p-4 rounded-2xl bg-accent/10 border border-accent/20 flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
