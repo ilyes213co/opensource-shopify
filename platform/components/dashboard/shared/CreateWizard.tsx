@@ -795,9 +795,6 @@ function Step1Redesigned({
             </p>
           </div>
         </div>
-        <span className="self-start sm:self-center text-xs font-bold px-3 py-1 rounded-full bg-accent/10 dark:bg-accent/20 text-accent dark:text-[#93c5fd] border border-accent/20 dark:border-accent/30">
-          {isFunnel ? "🎯 Mode Funnel" : "🏬 Mode Boutique"}
-        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
