@@ -5,6 +5,7 @@ import ProductPage, { DEFAULT_WILAYAS } from "@/components/ProductPage";
 import type { Product as GenericProduct, Store as GenericStore, Wilaya } from "@/types/product";
 import StoreAnalyticsTracker from "@/components/analytics/StoreAnalyticsTracker";
 import { safeJsonLd } from "@/lib/json-ld";
+import { sanitizePublicStoreSettings } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -188,7 +189,7 @@ export default async function ProductDetailsPage({ params }: PageProps) {
     facebook_pixel_id: storeRaw.facebook_pixel_id,
     tiktok_pixel_id: storeRaw.tiktok_pixel_id,
     google_analytics_id: storeRaw.google_analytics_id,
-    settings: storeRaw.settings,
+    settings: sanitizePublicStoreSettings(storeRaw.settings),
   };
 
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://easytradez.site";

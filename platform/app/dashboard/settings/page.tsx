@@ -229,8 +229,6 @@ function SettingsContent() {
 
   // Tab 4: Carrier & Notifications
   const [carrierProvider, setCarrierProvider] = useState("yalidine");
-  const [carrierApiId, setCarrierApiId] = useState("");
-  const [carrierApiToken, setCarrierApiToken] = useState("");
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [telegramChatId, setTelegramChatId] = useState("");
 
@@ -313,8 +311,6 @@ function SettingsContent() {
     setBlacklistInput((s.security?.blacklist || []).join("\n"));
 
     setCarrierProvider(s.carrier?.provider || "yalidine");
-    setCarrierApiId(s.carrier?.api_id || "");
-    setCarrierApiToken(s.carrier?.api_token || "");
 
     const manualShip = s.manual_shipping || {};
     setManualPriceHome(manualShip.price_home !== undefined ? manualShip.price_home : 600);
@@ -410,12 +406,6 @@ function SettingsContent() {
       return;
     }
 
-    if (userPlan.isFree && (carrierApiId.trim() || carrierApiToken.trim())) {
-      setUpgradeType("carrier");
-      setShowUpgradeModal(true);
-      return;
-    }
-
     setSaving(true);
     try {
       const cleanDomain = customDomain
@@ -446,8 +436,8 @@ function SettingsContent() {
         },
         carrier: {
           provider: carrierProvider,
-          api_id: carrierApiId.trim(),
-          api_token: carrierApiToken.trim(),
+          ...(currentStore.settings?.carrier?.api_id ? { api_id: currentStore.settings.carrier.api_id } : {}),
+          ...(currentStore.settings?.carrier?.api_token ? { api_token: currentStore.settings.carrier.api_token } : {}),
         },
         manual_shipping: {
           price_home: isFreeShipping ? 0 : Number(manualPriceHome) || 0,
@@ -1003,7 +993,7 @@ function SettingsContent() {
                   Connectez votre propre marque avec le Pack Pro
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-white/60 max-w-md mx-auto">
-                  Débloquez l&apos;utilisation d&apos;un domaine .dz ou .com avec routage automatique et certificat SSL Let&apos;s Encrypt.
+                  Utilisez votre propre domaine (.dz ou .com). Configuration manuelle : ajoutez l&apos;enregistrement CNAME indiqué ci-dessous.
                 </p>
                 <button
                   type="button"
@@ -1690,7 +1680,7 @@ function SettingsContent() {
                     Intégration Transporteurs Algérie (Yalidine, ZR Express, Maystro)
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-white/50">
-                    Connectez votre compte transporteur pour synchroniser vos colis et générer vos étiquettes en direct.
+                    Enregistrez vos informations transporteur. La création automatique de colis n&apos;est pas encore disponible.
                   </p>
                 </div>
               </div>
@@ -1716,7 +1706,7 @@ function SettingsContent() {
                   Intégration Transporteurs Réservée aux comptes Pro & Business
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-white/60 max-w-md mx-auto">
-                  Automatisez l&apos;envoi de vos colis vers les plateformes Yalidine Express, ZR Express et Maystro en 1 clic.
+                  Enregistrez vos informations transporteur. La création automatique de colis n&apos;est pas encore disponible.
                 </p>
                 <button
                   type="button"
@@ -1731,8 +1721,8 @@ function SettingsContent() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-                <div>
+              <div className="space-y-4 pt-1">
+                <div className="max-w-xs">
                   <label className="block text-xs font-bold text-slate-700 dark:text-white/80 mb-1.5">
                     Société de livraison partenaire
                   </label>
@@ -1748,30 +1738,13 @@ function SettingsContent() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-white/80 mb-1.5">
-                    API ID / Identifiant Client
-                  </label>
-                  <input
-                    type="text"
-                    value={carrierApiId}
-                    onChange={(e) => setCarrierApiId(e.target.value)}
-                    placeholder="Ex: YAL-123456"
-                    className="w-full px-3.5 py-2.5 text-xs font-mono font-semibold rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] text-slate-900 dark:text-white focus:border-accent outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-white/80 mb-1.5">
-                    API Token / Clé Secrète
-                  </label>
-                  <input
-                    type="password"
-                    value={carrierApiToken}
-                    onChange={(e) => setCarrierApiToken(e.target.value)}
-                    placeholder="••••••••••••••••••••"
-                    className="w-full px-3.5 py-2.5 text-xs font-mono font-semibold rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] text-slate-900 dark:text-white focus:border-accent outline-none"
-                  />
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-xs text-slate-600 dark:text-white/70">
+                  <p className="font-semibold text-slate-800 dark:text-white mb-1">
+                    Synchronisation automatique bientôt disponible
+                  </p>
+                  <p>
+                    La saisie des identifiants et jetons API sera activée dès la disponibilité de la synchronisation directe avec les transporteurs. Vos bordereaux d&apos;expédition restent imprimables depuis la gestion des commandes.
+                  </p>
                 </div>
               </div>
             )}

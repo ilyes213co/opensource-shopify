@@ -189,15 +189,20 @@ async def _run_deploy_pipeline(job_id: str, store_id: str, user_id: str, store_d
         _set_job(job_id, status="deploying", error=None)
         deploy_result = await deployer.deploy_store(store_id, html, seo)
 
+        existing_url = (store_data.get("published_url") or "").strip()
+        final_url = deploy_result["url"]
+        if existing_url and not existing_url.endswith(".vercel.app") and final_url.endswith(".vercel.app"):
+            final_url = existing_url
+
         _set_job(
             job_id,
             status="ready",
-            url=deploy_result["url"],
+            url=final_url,
             error=None,
             warning=warning,
             completed_at=_utc_now(),
         )
-        logger.info("Deploy job %s completed: %s", job_id, deploy_result["url"])
+        logger.info("Deploy job %s completed: %s", job_id, final_url)
     except Exception as exc:
         logger.error("Deploy job %s failed: %s", job_id, exc, exc_info=True)
         _set_job(

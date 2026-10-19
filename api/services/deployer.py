@@ -343,16 +343,28 @@ class StoreDeployer:
                     subdomain_warning = str(e)
 
             # ── Step 5: Choose the public URL ──────────────────────────
+            existing_published_url = (store.get("published_url") or "").strip()
             canonical_vercel_url = f"https://{repo_name}.vercel.app"
             if custom_domain_ok:
                 published_url = f"https://{subdomain}"
+            elif existing_published_url and not existing_published_url.endswith(".vercel.app"):
+                # Règle stricte : ne jamais écraser une published_url existante par une URL *.vercel.app
+                published_url = existing_published_url
+                logger.info(
+                    "Préservation de l'URL existante '%s' pour store %s (évite écrasement par %s)",
+                    published_url, store_id, canonical_vercel_url
+                )
             else:
                 published_url = canonical_vercel_url
 
             # ── Step 6: Update Supabase store record ────────────────────
+            subdomain_val = subdomain if custom_domain_ok else (
+                existing_published_url if (existing_published_url and not existing_published_url.endswith(".vercel.app"))
+                else f"{repo_name}.vercel.app"
+            )
             update_data = {
                 "vercel_project_id": project_id,
-                "subdomain": subdomain if custom_domain_ok else f"{repo_name}.vercel.app",
+                "subdomain": subdomain_val,
                 "published_url": published_url,
                 "status": "published",
                 "generated_html": html,

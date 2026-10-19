@@ -188,3 +188,20 @@ export function safeString(val: any, fallback = ""): string {
   if (typeof val === "number" || typeof val === "boolean") return String(val);
   return fallback;
 }
+
+/**
+ * Strips private operational secrets from store.settings (carrier credentials, telegram keys,
+ * security blacklists, etc.) so they are never leaked to public clients or serialized into HTML.
+ */
+export function sanitizePublicStoreSettings(settings: any): Record<string, any> {
+  if (!settings || typeof settings !== "object") return {};
+  const { carrier, notifications, ...rest } = settings;
+  const sanitizedSecurity = rest.security ? { ...rest.security } : undefined;
+  if (sanitizedSecurity) {
+    delete sanitizedSecurity.blacklist;
+  }
+  return {
+    ...rest,
+    ...(sanitizedSecurity ? { security: sanitizedSecurity } : {}),
+  };
+}

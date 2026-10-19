@@ -6,7 +6,7 @@ import FunnelPage from "@/components/FunnelPage";
 import type { Product as GenericProduct, Store as GenericStore, Wilaya } from "@/types/product";
 import Link from "next/link";
 import Image from "next/image";
-import { generateWhatsAppUrl, extractImageUrl } from "@/lib/utils";
+import { generateWhatsAppUrl, extractImageUrl, sanitizePublicStoreSettings } from "@/lib/utils";
 import NoticeBar from "@/components/store/NoticeBar";
 import type { StoreContentOverrides } from "@/types/store";
 import StoreAnalyticsTracker from "@/components/analytics/StoreAnalyticsTracker";
@@ -118,7 +118,7 @@ export default async function StoreOrFunnelPage({ params, searchParams }: PagePr
       facebook_pixel_id: (store as any).facebook_pixel_id,
       tiktok_pixel_id: (store as any).tiktok_pixel_id,
       google_analytics_id: (store as any).google_analytics_id,
-      settings: (store as any).settings,
+      settings: sanitizePublicStoreSettings((store as any).settings),
       content_overrides: (store as any).content_overrides || {},
     };
 
