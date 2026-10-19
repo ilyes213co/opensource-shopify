@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import Providers from "@/components/providers";
 import "./globals.css";
 import "@/styles/themes/index.css";
+import { safeJsonLd } from "@/lib/json-ld";
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://easytradez.site";
 
@@ -139,7 +140,7 @@ export default function RootLayout({
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
         />
       </head>
       <body className="min-h-screen bg-bg text-ink font-sans antialiased selection:bg-brand selection:text-white transition-colors duration-200">

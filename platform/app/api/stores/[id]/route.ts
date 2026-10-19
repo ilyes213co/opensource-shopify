@@ -168,7 +168,6 @@ export async function PATCH(
         "carrier",
         "manual_shipping",
         "notifications",
-        "custom_domain",
       ]);
       const sanitizedSettings: Record<string, any> = {};
       for (const [k, v] of Object.entries(filteredBody.settings)) {

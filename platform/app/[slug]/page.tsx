@@ -10,6 +10,7 @@ import { generateWhatsAppUrl, extractImageUrl } from "@/lib/utils";
 import NoticeBar from "@/components/store/NoticeBar";
 import type { StoreContentOverrides } from "@/types/store";
 import StoreAnalyticsTracker from "@/components/analytics/StoreAnalyticsTracker";
+import { safeJsonLd } from "@/lib/json-ld";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -186,7 +187,7 @@ export default async function StoreOrFunnelPage({ params, searchParams }: PagePr
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(funnelJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(funnelJsonLd) }}
         />
         <FunnelPage
           store={genericStore}
@@ -246,7 +247,7 @@ export default async function StoreOrFunnelPage({ params, searchParams }: PagePr
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(storeJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(storeJsonLd) }}
       />
       <div
         id="top"

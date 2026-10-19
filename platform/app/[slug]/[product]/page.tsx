@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import ProductPage, { DEFAULT_WILAYAS } from "@/components/ProductPage";
 import type { Product as GenericProduct, Store as GenericStore, Wilaya } from "@/types/product";
 import StoreAnalyticsTracker from "@/components/analytics/StoreAnalyticsTracker";
+import { safeJsonLd } from "@/lib/json-ld";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -227,7 +228,7 @@ export default async function ProductDetailsPage({ params }: PageProps) {
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(productJsonLd) }}
       />
       <ProductPage product={genericProduct} store={genericStore} wilayas={wilayas} />
     </>

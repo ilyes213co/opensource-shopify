@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import LandingClient from "@/components/landing/LandingClient";
 import { FAQ_QUESTIONS } from "@/lib/landing-data";
+import { safeJsonLd } from "@/lib/json-ld";
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://easytradez.site";
 
@@ -110,7 +111,7 @@ export default function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <LandingClient />
     </>
