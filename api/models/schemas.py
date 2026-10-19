@@ -25,7 +25,7 @@ class StoreCreate(BaseModel):
     font_family: str = "modern"
     logo_url: Optional[str] = None
     whatsapp_phone: Optional[str] = None
-    theme: str = "monochrome"
+    theme: str = "modern"
     animation_style: str = "soft"
     type: Literal["boutique", "funnel"] = "boutique"
     special_effects: list[str] = Field(default_factory=list)

@@ -199,7 +199,7 @@ async def create_store(
         "description": payload.description,
         "primary_color": payload.primary_color or "#6366f1",
         "whatsapp_phone": payload.whatsapp_phone,
-        "theme": payload.theme if (payload.theme and payload.theme != "modern") else "monochrome",
+        "theme": payload.theme or "modern",
         "animation_style": payload.animation_style or "soft",
         "type": store_type,
         "status": "draft",
