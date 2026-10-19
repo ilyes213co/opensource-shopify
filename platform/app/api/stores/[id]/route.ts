@@ -59,6 +59,7 @@ export async function PATCH(
       "primary_color",
       "font_family",
       "logo_url",
+      "cover_url",
       "whatsapp_phone",
       "theme",
       "animation_style",
