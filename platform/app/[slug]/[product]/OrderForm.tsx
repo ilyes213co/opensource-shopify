@@ -67,11 +67,13 @@ function SuccessView({
   waLink,
   storeName,
   storeSlug,
+  confirmedTotal,
 }: {
   orderId: string;
   waLink: string;
   storeName: string;
   storeSlug: string;
+  confirmedTotal?: number;
 }) {
   return (
     <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-center space-y-4">
@@ -88,6 +90,11 @@ function SuccessView({
             #{orderId.slice(-6).toUpperCase()}
           </span>
         </p>
+        {typeof confirmedTotal === "number" && (
+          <p className="text-sm font-semibold text-emerald-800 mt-2">
+            Montant total confirmé : {confirmedTotal.toLocaleString("fr-DZ")} DZD
+          </p>
+        )}
       </div>
 
       {/* WhatsApp CTA */}
@@ -131,6 +138,7 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
   const [step, setStep]       = useState<Step>("form");
   const [orderId, setOrderId] = useState("");
   const [waLink, setWaLink]   = useState("");
+  const [confirmedTotal, setConfirmedTotal] = useState<number | null>(null);
 
   // Delivery
   const [rates, setRates]                   = useState<ShippingRateOption[]>([]);
@@ -267,6 +275,7 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
 
     let finalOrderId = "CMD-" + Date.now().toString().slice(-6);
     const cleanedPhone = normalizeDzPhone(form.phone);
+    let serverConfirmedTotal = total;
 
     try {
       // 1. Essayer la route Next.js API /api/orders (sécurisée, service role, validation)
@@ -291,7 +300,13 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
       const data = await res?.json().catch(() => null);
 
       if (res && res.ok) {
-        if (data?.order?.id) finalOrderId = data.order.id;
+        if (data?.order?.id || data?.order_id) finalOrderId = data?.order_id || data.order.id;
+        if (typeof data?.total_amount === "number") {
+          serverConfirmedTotal = data.total_amount;
+        } else if (typeof data?.order?.total_amount === "number") {
+          serverConfirmedTotal = data.order.total_amount;
+        }
+        setConfirmedTotal(serverConfirmedTotal);
       } else {
         // Si rejeté par la sécurité (erreur 400 ou 403), afficher le message exact du serveur
         if (res && (res.status === 400 || res.status === 403)) {
@@ -345,7 +360,7 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
 
     // Track conversion across configured pixels
     trackStorePurchase({
-      total,
+      total: serverConfirmedTotal,
       orderId: finalOrderId,
       productName: product.name,
       currency: "DZD",
@@ -368,7 +383,7 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
       `• ${product.name} × ${qty} = ${subtotal.toLocaleString("fr-DZ")} DZD`,
       wilayaName ? `🚚 ${wilayaName}` : "",
       selectedCommune ? `📍 Commune : ${selectedCommune}` : "",
-      `💰 Total : ${total.toLocaleString("fr-DZ")} DZD`,
+      `💰 Total : ${serverConfirmedTotal.toLocaleString("fr-DZ")} DZD`,
       ``,
       `👤 ${form.name}`,
       `📞 ${form.phone}`,
@@ -400,6 +415,7 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
         waLink={waLink}
         storeName={store.name}
         storeSlug={store.slug}
+        confirmedTotal={confirmedTotal ?? undefined}
       />
     );
   }

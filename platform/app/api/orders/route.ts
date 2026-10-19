@@ -8,6 +8,9 @@ export const dynamic = "force-dynamic";
 
 
 function getSupabaseAdmin() {
+  if ((globalThis as any).__mockSupabaseAdmin) {
+    return (globalThis as any).__mockSupabaseAdmin;
+  }
   const serviceKey =
     process.env.SUPABASE_SERVICE_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -37,74 +40,25 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
+const MIN_QTY_PER_ITEM = 1;
+const MAX_QTY_PER_ITEM = 10;
+const MAX_ITEMS_PER_ORDER = 10;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const {
-      product_id,
-      options_selected = {},
-      qty = 1,
-      wilaya_id,
-      customer_name,
-      customer_phone,
-      customer_email,
-      customer_address,
-      items: rawItems,
-      total_amount: rawTotalAmount,
-      notes,
-    } = body;
-
-    const shipMode = body.ship_mode || body.shipMode || "domicile";
-    let store_id = body.store_id;
-
-    // 1. Validation de base des champs client
-    if (!customer_name || typeof customer_name !== "string" || customer_name.trim().length < 2) {
-      return NextResponse.json(
-        { error: "Le nom du client doit comporter au moins 2 caractères" },
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
     const supabase = getSupabaseAdmin();
 
-    // 2. Résolution du produit si product_id fourni
-    let items = Array.isArray(rawItems) ? rawItems : [];
-    let product: any = null;
-
-    if (product_id) {
-      const { data: prodData } = await supabase
-        .from("products")
-        .select("*")
-        .eq("id", String(product_id))
-        .single();
-
-      if (prodData) {
-        product = prodData;
-        store_id = store_id || product.store_id;
-
-        if (items.length === 0) {
-          items = [
-            {
-              product_id: product.id,
-              name: product.name,
-              price: Number(product.price || 0),
-              quantity: Math.max(1, Number(qty) || 1),
-              options_selected: options_selected || {},
-            },
-          ];
-        }
-      }
-    }
-
-    // 3. Validation du store_id
-    if (!store_id || String(store_id).trim().toLowerCase() in { demo: 1, null: 1, undefined: 1 }) {
+    // 1. Validation stricte de la boutique
+    const rawStoreId = body.store_id;
+    if (!rawStoreId || typeof rawStoreId !== "string" || !rawStoreId.trim()) {
       return NextResponse.json(
         { error: "Identifiant de boutique (store_id) manquant pour cette commande" },
         { status: 400, headers: corsHeaders }
       );
     }
+    const store_id = rawStoreId.trim();
 
-    // Récupération de la boutique et de ses paramètres de sécurité
     const { data: storeData } = await supabase
       .from("stores")
       .select("id, name, status, settings")
@@ -114,135 +68,258 @@ export async function POST(req: NextRequest) {
     if (!storeData) {
       return NextResponse.json(
         { error: "Boutique introuvable pour cette commande" },
-        { status: 404, headers: corsHeaders }
-      );
-    }
-
-    if (storeData.status === "suspended") {
-      return NextResponse.json(
-        { error: "Cette boutique est actuellement suspendue" },
-        { status: 403, headers: corsHeaders }
-      );
-    }
-
-    const storeSettings = (storeData.settings as any) || {};
-    const security = storeSettings.security || {};
-
-    // ─── Sécurité COD & Anti-Fake Orders (Spécial Algérie) ───────────────────
-    const cleanPhone = normalizeDzPhone(customer_phone);
-
-    // A. Validation stricte numéro DZ (10 chiffres commençant par 05, 06 ou 07)
-    if (security.strict_dz_phone !== false) {
-      if (!isValidStrictDzPhone(cleanPhone)) {
-        return NextResponse.json(
-          {
-            error:
-              "Numéro de téléphone algérien invalide. Il doit comporter 10 chiffres et commencer obligatoirement par 05, 06 ou 07.",
-          },
-          { status: 400, headers: corsHeaders }
-        );
-      }
-    } else if (cleanPhone.length < 9) {
-      return NextResponse.json(
-        { error: "Numéro de téléphone invalide (au moins 9 chiffres requis)" },
         { status: 400, headers: corsHeaders }
       );
     }
 
-    // B. Vérification Liste Noire (Blacklist)
-    const blacklist: string[] = Array.isArray(security.blacklist) ? security.blacklist : [];
-    if (blacklist.length > 0) {
-      const normalizedBlacklist = new Set(blacklist.map((b) => normalizeDzPhone(b)).filter(Boolean));
-      if (normalizedBlacklist.has(cleanPhone)) {
-        return NextResponse.json(
-          {
-            error:
-              "Ce numéro de téléphone n'est pas autorisé à passer commande sur cette boutique.",
-          },
-          { status: 400, headers: corsHeaders }
-        );
-      }
-    }
-
-    // C. Anti-Spam commandes (limite à 2 commandes sur 24h par numéro)
-    if (security.anti_spam_orders) {
-      const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { data: recentOrders } = await supabase
-        .from("orders")
-        .select("id, customer_phone")
-        .eq("store_id", store_id)
-        .gte("created_at", cutoff24h);
-
-      const matching = (recentOrders || []).filter(
-        (o: any) => normalizeDzPhone(o.customer_phone) === cleanPhone
+    // Exigence 2 : La boutique doit exister et être publiée ('published' ou 'active' dans les données historiques)
+    if (storeData.status !== "published" && storeData.status !== "active") {
+      return NextResponse.json(
+        { error: "La boutique n'est pas disponible pour recevoir des commandes (statut non publié)" },
+        { status: 400, headers: corsHeaders }
       );
-      if (matching.length >= 2) {
-        return NextResponse.json(
-          {
-            error:
-              "Limite de commandes atteinte pour ce numéro dans les dernières 24h. Veuillez patienter ou contacter le service client.",
-          },
-          { status: 400, headers: corsHeaders }
-        );
-      }
+    }
+    if (storeData.status === "suspended") {
+      return NextResponse.json(
+        { error: "Cette boutique est actuellement suspendue" },
+        { status: 400, headers: corsHeaders }
+      );
     }
 
-    // 4. Calcul des frais de livraison via Wilaya
-    let wilayaName = body.wilaya || "";
-    let deliveryCost = 0;
+    // 2. Validation minimale des champs client
+    // Nom client : 2 à 80 caractères
+    const rawName = typeof body.customer_name === "string" ? body.customer_name.trim() : "";
+    if (rawName.length < 2 || rawName.length > 80) {
+      return NextResponse.json(
+        { error: "Le nom du client doit comporter entre 2 et 80 caractères" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
 
-    if (wilaya_id) {
-      const wId = Number(wilaya_id);
-      const wilayaConfig = DEFAULT_WILAYAS.find((w) => w.id === wId);
-      if (wilayaConfig) {
-        wilayaName = wilayaConfig.name;
-        deliveryCost = shipMode === "stopdesk" ? wilayaConfig.price_desk : wilayaConfig.price_home;
+    // Téléphone au format algérien (05, 06, 07 suivi de 8 chiffres, ou +213)
+    const cleanPhone = normalizeDzPhone(body.customer_phone);
+    if (!isValidStrictDzPhone(cleanPhone)) {
+      return NextResponse.json(
+        {
+          error:
+            "Numéro de téléphone algérien invalide. Il doit comporter 10 chiffres et commencer par 05, 06 ou 07 (ou format international +213).",
+        },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Mode de livraison (domicile ou stopdesk)
+    const rawShipMode = String(body.ship_mode || body.shipMode || "").toLowerCase().trim();
+    if (rawShipMode !== "domicile" && rawShipMode !== "stopdesk" && rawShipMode !== "stop-desk") {
+      return NextResponse.json(
+        { error: "Mode de livraison invalide. Choisissez 'domicile' ou 'stopdesk'." },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+    const isHome = rawShipMode === "domicile";
+
+    // Wilaya de livraison (1 à 58)
+    const rawWilayaId = body.wilaya_id;
+    const wilayaId = Number(rawWilayaId);
+    if (!rawWilayaId || isNaN(wilayaId) || !Number.isInteger(wilayaId) || wilayaId < 1 || wilayaId > 58) {
+      return NextResponse.json(
+        { error: "Wilaya de livraison invalide ou inconnue (doit être un entier entre 1 et 58)." },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Frais de livraison : lus dans shipping_rates de CETTE boutique
+    let deliveryCost: number | null = null;
+    let wilayaName = typeof body.wilaya === "string" ? body.wilaya.trim() : "";
+
+    const { data: storeRate } = await supabase
+      .from("shipping_rates")
+      .select("price_home, price_desk")
+      .eq("store_id", storeData.id)
+      .eq("wilaya_id", wilayaId)
+      .maybeSingle();
+
+    if (storeRate) {
+      deliveryCost = isHome ? Number(storeRate.price_home) : Number(storeRate.price_desk);
+    } else {
+      // Repli sur la table wilayas seulement s'il n'existe pas de ligne pour cette boutique
+      const { data: globalWilaya } = await supabase
+        .from("wilayas")
+        .select("name, price_home, price_desk")
+        .eq("id", wilayaId)
+        .maybeSingle();
+
+      if (globalWilaya) {
+        wilayaName = wilayaName || globalWilaya.name;
+        deliveryCost = isHome ? Number(globalWilaya.price_home) : Number(globalWilaya.price_desk);
       } else {
-        deliveryCost = shipMode === "stopdesk" ? 300 : 500;
+        const fallback = DEFAULT_WILAYAS.find((w) => w.id === wilayaId);
+        if (fallback) {
+          wilayaName = wilayaName || fallback.name;
+          deliveryCost = isHome ? fallback.price_home : fallback.price_desk;
+        }
       }
     }
 
-    // 5. Calcul du montant total
-    let totalAmount = 0;
-    if (rawTotalAmount !== undefined && rawTotalAmount !== null && Number(rawTotalAmount) > 0) {
-      totalAmount = Number(rawTotalAmount);
-    } else if (items.length > 0) {
-      const subtotal = items.reduce(
-        (sum, item) => sum + Number(item.price || 0) * Math.max(1, Number(item.quantity) || 1),
-        0
+    if (deliveryCost === null || isNaN(deliveryCost) || deliveryCost < 0) {
+      return NextResponse.json(
+        { error: "Tarif de livraison introuvable pour cette wilaya." },
+        { status: 400, headers: corsHeaders }
       );
-      totalAmount = subtotal + deliveryCost;
-    } else if (product) {
-      totalAmount = Number(product.price || 0) * Math.max(1, Number(qty) || 1) + deliveryCost;
     }
 
-    // 6. Formatage de l'adresse et de la note client réelle
-    const customerCommune = typeof body.customer_commune === "string" ? body.customer_commune.trim() : (typeof body.commune === "string" ? body.commune.trim() : "");
-    const modeLabel = shipMode === "stopdesk" ? "Stop Desk" : "À domicile";
-    const addressParts: string[] = [];
-    if (wilayaName) addressParts.push(`Wilaya: ${wilayaName} (${modeLabel})`);
-    if (customerCommune) addressParts.push(`Commune: ${customerCommune}`);
-    if (customer_address && String(customer_address).trim()) {
-      addressParts.push(String(customer_address).trim());
+    // Adresse : 5 à 300 caractères
+    const customerCommune =
+      typeof body.customer_commune === "string"
+        ? body.customer_commune.trim()
+        : typeof body.commune === "string"
+        ? body.commune.trim()
+        : "";
+    const rawAddress = typeof body.customer_address === "string" ? body.customer_address.trim() : "";
+    let fullAddress = rawAddress;
+    if (!fullAddress) {
+      const modeLabel = isHome ? "À domicile" : "Stop Desk";
+      const parts: string[] = [];
+      if (wilayaName) parts.push(`Wilaya: ${wilayaName} (${modeLabel})`);
+      if (customerCommune) parts.push(`Commune: ${customerCommune}`);
+      fullAddress = parts.join(" — ");
     }
-    const fullAddress = addressParts.join(" — ") || "Non spécifiée";
+    if (fullAddress.length < 5 || fullAddress.length > 300) {
+      return NextResponse.json(
+        { error: "L'adresse de livraison doit comporter entre 5 et 300 caractères." },
+        { status: 400, headers: corsHeaders }
+      );
+    }
 
-    // Seule la vraie note libre écrite par le client est conservée
-    const cleanCustomerNote =
-      typeof notes === "string" && notes.trim().length > 0 ? notes.trim() : null;
+    // Notes : 500 caractères maximum
+    const rawNotes = typeof body.notes === "string" ? body.notes.trim() : "";
+    if (rawNotes.length > 500) {
+      return NextResponse.json(
+        { error: "La note de commande ne doit pas dépasser 500 caractères." },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+    const cleanNotes = rawNotes.length > 0 ? rawNotes : null;
 
-    // 7. Insertion de la commande en base avec clé service_role (bypasse RLS)
+    // 3. Articles de la commande et recalcul strict des prix en base
+    let rawItems: any[] = [];
+    if (Array.isArray(body.items) && body.items.length > 0) {
+      rawItems = body.items;
+    } else if (body.product_id) {
+      rawItems = [
+        {
+          product_id: body.product_id,
+          qty: body.qty !== undefined ? body.qty : 1,
+          options_selected: body.options_selected || {},
+        },
+      ];
+    }
+
+    if (rawItems.length === 0) {
+      return NextResponse.json(
+        { error: "La commande doit contenir au moins un article." },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    if (rawItems.length > MAX_ITEMS_PER_ORDER) {
+      return NextResponse.json(
+        { error: `Une commande ne peut pas contenir plus de ${MAX_ITEMS_PER_ORDER} articles.` },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const validatedItems = [];
+    let subtotal = 0;
+
+    for (const rawItem of rawItems) {
+      const prodId = rawItem.product_id || rawItem.id;
+      if (!prodId || typeof prodId !== "string" || !prodId.trim()) {
+        return NextResponse.json(
+          { error: "Identifiant de produit manquant pour un article de la commande." },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      const rawQty = rawItem.qty !== undefined ? rawItem.qty : rawItem.quantity;
+      if (
+        typeof rawQty !== "number" ||
+        !Number.isInteger(rawQty) ||
+        rawQty < MIN_QTY_PER_ITEM ||
+        rawQty > MAX_QTY_PER_ITEM
+      ) {
+        return NextResponse.json(
+          {
+            error: `La quantité de chaque article doit être un entier compris entre ${MIN_QTY_PER_ITEM} et ${MAX_QTY_PER_ITEM}.`,
+          },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      // Récupération du produit en base
+      const { data: dbProduct, error: prodErr } = await supabase
+        .from("products")
+        .select("id, name, price, status, store_id, images, options")
+        .eq("id", prodId.trim())
+        .maybeSingle();
+
+      if (prodErr || !dbProduct) {
+        return NextResponse.json(
+          { error: "Produit introuvable en base de données." },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      if (dbProduct.store_id !== storeData.id) {
+        return NextResponse.json(
+          { error: "Le produit spécifié n'appartient pas à cette boutique." },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      if (dbProduct.status !== "active") {
+        return NextResponse.json(
+          { error: "Le produit spécifié n'est pas actif." },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      const dbPrice = Number(dbProduct.price);
+      if (isNaN(dbPrice) || dbPrice < 0) {
+        return NextResponse.json(
+          { error: "Prix de produit invalide en base." },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      // Le serveur ignore tout prix envoyé par le client (items[].price)
+      subtotal += dbPrice * rawQty;
+
+      validatedItems.push({
+        product_id: dbProduct.id,
+        name: dbProduct.name,
+        price: dbPrice,
+        quantity: rawQty,
+        options_selected: rawItem.options_selected || {},
+        image: Array.isArray(dbProduct.images) && dbProduct.images.length > 0 ? dbProduct.images[0] : null,
+      });
+    }
+
+    // Montant total recalculé côté serveur (le total_amount envoyé par le client est ignoré)
+    const totalAmount = Math.round((subtotal + deliveryCost) * 100) / 100;
+
+    // Insertion de la commande en base avec clé service_role (bypasse RLS)
     const payload = {
-      store_id,
-      customer_name: customer_name.trim(),
+      store_id: storeData.id,
+      customer_name: rawName,
       customer_phone: cleanPhone,
-      customer_email: customer_email || null,
+      customer_email: body.customer_email || null,
       customer_address: fullAddress,
-      items,
-      total_amount: Math.round(totalAmount),
+      items: validatedItems,
+      total_amount: totalAmount,
       status: "pending",
       payment_status: "pending",
-      notes: cleanCustomerNote,
+      notes: cleanNotes,
     };
 
     const { data: createdOrder, error: insertError } = await supabase
@@ -273,10 +350,9 @@ export async function POST(req: NextRequest) {
 
     // 8. Déduction du stock (non-bloquante)
     try {
-      for (const item of items) {
-
-        const prodId = item.product_id || item.id;
-        const q = Math.max(1, Number(item.quantity) || 1);
+      for (const item of validatedItems) {
+        const prodId = item.product_id;
+        const q = item.quantity;
         if (prodId) {
           const { data: pData } = await supabase
             .from("products")
@@ -298,10 +374,11 @@ export async function POST(req: NextRequest) {
 
     // 9. Alerte Telegram instantanée (non-bloquante)
     try {
+      const storeSettings = (storeData.settings as any) || {};
       const telegramChatId = storeSettings?.notifications?.telegram_chat_id?.trim();
       const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
       if (telegramChatId && botToken) {
-        const itemsList = Array.isArray(items) ? items : [];
+        const itemsList = Array.isArray(validatedItems) ? validatedItems : [];
         const itemsStr =
           itemsList
             .map(
@@ -322,7 +399,7 @@ export async function POST(req: NextRequest) {
           `📞 <b>Téléphone :</b> <code>${createdOrder.customer_phone}</code>`,
           `📍 <b>Adresse / Wilaya :</b> ${createdOrder.customer_address || "Non spécifiée"}`,
           `💰 <b>Total C.O.D :</b> <b>${Number(totalAmount).toLocaleString("fr-DZ")} DZD</b>`,
-          cleanCustomerNote ? `📝 <b>Note :</b> ${cleanCustomerNote}` : "",
+          cleanNotes ? `📝 <b>Note :</b> ${cleanNotes}` : "",
         ]
           .filter(Boolean)
           .join("\n");
@@ -349,6 +426,8 @@ export async function POST(req: NextRequest) {
         message: "Commande enregistrée avec succès",
         order_id: createdOrder.id,
         total_amount: totalAmount,
+        subtotal: Math.round(subtotal * 100) / 100,
+        shipping_fee: Math.round(deliveryCost * 100) / 100,
         order: createdOrder,
       },
       { status: 200, headers: corsHeaders }

@@ -73,6 +73,7 @@ export default function FunnelPage({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isToastOpen, setIsToastOpen] = useState<boolean>(false);
   const [orderDone, setOrderDone] = useState<boolean>(false);
+  const [confirmedTotal, setConfirmedTotal] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"desc" | "spec" | "ship">("desc");
 
   const orderFormRef = useRef<HTMLDivElement>(null);
@@ -262,12 +263,19 @@ export default function FunnelPage({
       }
 
       const finalOrderId = resData?.order_id || resData?.order?.id || "CMD-" + Date.now().toString().slice(-6);
+      const serverTotal =
+        typeof resData?.total_amount === "number"
+          ? resData.total_amount
+          : typeof resData?.order?.total_amount === "number"
+          ? resData.order.total_amount
+          : total;
 
+      setConfirmedTotal(serverTotal);
       setOrderDone(true);
 
       // Déclenchement de la conversion sur tous les pixels configurés (Meta, TikTok, Google Analytics)
       trackStorePurchase({
-        total,
+        total: serverTotal,
         orderId: finalOrderId,
         productName: product.name,
         currency: "DZD",
@@ -701,13 +709,13 @@ export default function FunnelPage({
               {orderDone ? (
                 <div className="space-y-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center">
                   <div className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                    ✓ Merci ! Votre commande a été enregistrée avec succès. Notre service client vous contactera sous peu.
+                    ✓ Merci ! Votre commande a été enregistrée avec succès. Total confirmé : {formatMoney(confirmedTotal ?? total)}. Notre service client vous contactera sous peu.
                   </div>
                   {waNumber && (
                     <a
                       href={generateWhatsAppUrl(
                         waNumber,
-                        `Bonjour ${store.name} ! 👋\nJe viens de commander "${product.name}" (${formatMoney(total)}).\nClient: ${customerName} - ${customerPhone}.\nWilaya: ${selectedWilaya?.name || selectedWilayaId}${customerCommune ? ' (' + customerCommune + ')' : ''}.\nMerci de confirmer ma commande !`
+                        `Bonjour ${store.name} ! 👋\nJe viens de commander "${product.name}" (${formatMoney(confirmedTotal ?? total)}).\nClient: ${customerName} - ${customerPhone}.\nWilaya: ${selectedWilaya?.name || selectedWilayaId}${customerCommune ? ' (' + customerCommune + ')' : ''}.\nMerci de confirmer ma commande !`
                       )}
                       target="_blank"
                       rel="noopener noreferrer"

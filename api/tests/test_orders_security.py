@@ -227,27 +227,60 @@ async def test_telegram_notification_dispatched():
     from fastapi import BackgroundTasks
 
     mock_sb = MagicMock()
-    mock_sb.table().select().eq().execute.return_value.data = [
-        {
-            "id": "store-1",
-            "name": "Super Boutique",
-            "status": "active",
-            "settings": {
-                "security": {"strict_dz_phone": True},
-                "notifications": {"telegram_chat_id": "999888777"},
-            },
-        }
-    ]
-    mock_sb.table().insert().execute.return_value.data = [
-        {
-            "id": "order-abc-123456",
-            "customer_name": "Nabil",
-            "customer_phone": "0661234567",
-            "customer_address": "Alger",
-            "total_amount": 4500,
-            "items": [{"name": "Montre", "quantity": 1, "price": 4500}],
-        }
-    ]
+
+    def table_mock(tname):
+        m = MagicMock()
+        m.select.return_value = m
+        m.eq.return_value = m
+        m.insert.return_value = m
+        m.update.return_value = m
+        m.single.return_value = m
+        if tname == "stores":
+            m.execute.return_value = MagicMock(data=[{
+                "id": "store-1",
+                "name": "Super Boutique",
+                "status": "published",
+                "settings": {
+                    "security": {"strict_dz_phone": True},
+                    "notifications": {"telegram_chat_id": "999888777"},
+                },
+            }])
+        elif tname == "products":
+            m.execute.return_value = MagicMock(data=[{
+                "id": "prod-1",
+                "name": "Montre",
+                "price": 4000.0,
+                "status": "active",
+                "store_id": "store-1",
+            }])
+        elif tname == "shipping_rates":
+            m.execute.return_value = MagicMock(data=[{
+                "store_id": "store-1",
+                "wilaya_id": 16,
+                "price_home": 500.0,
+                "price_desk": 300.0,
+            }])
+        elif tname == "wilayas":
+            m.execute.return_value = MagicMock(data=[{
+                "id": 16,
+                "name": "Alger",
+                "price_home": 500.0,
+                "price_desk": 300.0,
+            }])
+        elif tname == "orders":
+            m.execute.return_value = MagicMock(data=[{
+                "id": "order-abc-123456",
+                "customer_name": "Nabil",
+                "customer_phone": "0661234567",
+                "customer_address": "Alger",
+                "total_amount": 4500,
+                "items": [{"name": "Montre", "quantity": 1, "price": 4000}],
+            }])
+        else:
+            m.execute.return_value = MagicMock(data=[])
+        return m
+
+    mock_sb.table.side_effect = table_mock
 
     bg_tasks = BackgroundTasks()
 
@@ -255,7 +288,10 @@ async def test_telegram_notification_dispatched():
         store_id="store-1",
         customer_name="Nabil",
         customer_phone="0661234567",
-        total_amount=4500,
+        customer_address="12 Rue Didouche Mourad, Alger",
+        wilaya_id=16,
+        ship_mode="domicile",
+        items=[{"product_id": "prod-1", "quantity": 1}],
     )
 
     with patch.dict("os.environ", {"TELEGRAM_BOT_TOKEN": "bot123456:ABC-DEF"}):

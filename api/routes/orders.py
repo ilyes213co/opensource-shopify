@@ -72,37 +72,45 @@ def send_telegram_order_notification(bot_token: str, chat_id: str, order_data: d
     except Exception as e:
         logger.warning(f"Échec notification Telegram (non-bloquant): {e}")
 
+# ─── Constantes de validation des commandes ──────────────────────────────────
+MIN_QTY_PER_ITEM = 1
+MAX_QTY_PER_ITEM = 10
+MAX_ITEMS_PER_ORDER = 10
+
+
 # ─── Pydantic Models ──────────────────────────────────────────────────────────
 
 class CreateOrderRequest(BaseModel):
     product_id: Optional[str] = None
     options_selected: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    qty: Optional[int] = Field(default=1, ge=1, le=1000)
-    wilaya_id: Optional[int] = None
+    qty: Optional[Any] = 1
+    wilaya_id: Optional[Any] = None
     ship_mode: Optional[str] = "domicile"  # 'domicile' ou 'stopdesk'
-    customer_name: str = Field(..., min_length=2, max_length=120)
+    customer_name: str = Field(..., min_length=2, max_length=80)
     customer_phone: str = Field(..., min_length=9, max_length=20)
     customer_email: Optional[str] = None
     customer_address: Optional[str] = None
+    customer_commune: Optional[str] = None
+    commune: Optional[str] = None
     wilaya: Optional[str] = None
     store_id: Optional[str] = None
     items: Optional[List[Dict[str, Any]]] = None
-    total_amount: Optional[float] = Field(default=None, ge=0)
+    total_amount: Optional[float] = None  # Ignoré côté serveur (recalcul strict)
     payment_method: Optional[str] = "cod"
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(default=None, max_length=500)
 
     @field_validator("customer_name")
     @classmethod
     def validate_name(cls, v: str) -> str:
-        cleaned = v.strip()
-        if len(cleaned) < 2:
-            raise ValueError("Le nom du client doit comporter au moins 2 caractères")
+        cleaned = v.strip() if v else ""
+        if len(cleaned) < 2 or len(cleaned) > 80:
+            raise ValueError("Le nom du client doit comporter entre 2 et 80 caractères")
         return cleaned
 
     @field_validator("customer_phone")
     @classmethod
     def validate_phone(cls, v: str) -> str:
-        cleaned = re.sub(r"\D", "", v)
+        cleaned = re.sub(r"\D", "", v) if v else ""
         if len(cleaned) < 9 or len(cleaned) > 15:
             raise ValueError("Numéro de téléphone invalide (au moins 9 chiffres requis)")
         return v.strip()
@@ -153,78 +161,54 @@ async def create_order(
     background_tasks: BackgroundTasks = BackgroundTasks(),
     supabase = Depends(get_supabase)
 ):
-    """Enregistre une commande produit direct ou multi-articles avec calcul COD."""
-    store_id = req.store_id
-    product = None
-    delivery_cost = 0.0
-    wilaya_name = req.wilaya
-
-    # 1. Résolution de la wilaya
-    if req.wilaya_id:
-        try:
-            w_res = supabase.table("wilayas").select("*").eq("id", req.wilaya_id).single().execute()
-            if w_res.data:
-                wilaya_name = w_res.data.get("name")
-                delivery_cost = float(w_res.data.get("price_home") if req.ship_mode == "domicile" else w_res.data.get("price_desk"))
-        except Exception as e:
-            logger.warning(f"Impossible de lire la table wilayas ({e}), fallback mémoire")
-            if req.wilaya_id in DEFAULT_WILAYAS_DATA:
-                name, p_home, p_desk, _ = DEFAULT_WILAYAS_DATA[req.wilaya_id]
-                wilaya_name = name
-                delivery_cost = float(p_home if req.ship_mode == "domicile" else p_desk)
-            else:
-                delivery_cost = 500.0
-
-    # 2. Résolution du produit si product_id fourni
-    items = req.items or []
-    if req.product_id:
-        prod_res = supabase.table("products").select("*").eq("id", str(req.product_id)).single().execute()
-        if prod_res.data:
-            product = prod_res.data
-            store_id = store_id or product.get("store_id")
-            unit_price = float(product.get("price", 0.0))
-            quantity = max(1, req.qty or 1)
-            item_entry = {
-                "product_id": product.get("id"),
-                "name": product.get("name"),
-                "price": unit_price,
-                "quantity": quantity,
-                "options_selected": req.options_selected or {},
-            }
-            if not req.items:
-                items = [item_entry]
-
-    # 3. Validation stricte du store_id
-    if not store_id or str(store_id).strip().lower() in ("demo", "null", "undefined") or str(store_id).startswith("{{"):
+    """Enregistre une commande avec recalcul strict et intégral des montants côté serveur."""
+    # 1. Validation de la boutique
+    raw_store_id = req.store_id
+    if not raw_store_id or str(raw_store_id).strip().lower() in ("demo", "null", "undefined") or str(raw_store_id).startswith("{{"):
         raise HTTPException(
             status_code=400,
-            detail="Identifiant de boutique (store_id) manquant ou invalide pour cette commande"
+            detail="Identifiant de boutique (store_id) manquant pour cette commande"
         )
+    store_id = str(raw_store_id).strip()
 
-    # Vérification que la boutique existe et récupération des settings de sécurité
     store_check = supabase.table("stores").select("id, name, status, settings").eq("id", store_id).execute()
     if not store_check.data:
-        raise HTTPException(status_code=404, detail="Boutique introuvable pour cette commande")
-    
+        raise HTTPException(status_code=400, detail="Boutique introuvable pour cette commande")
+
     store_record = store_check.data[0]
+    # Exigence 2 : La boutique doit exister et être publiée ('published' ou 'active' dans les données historiques)
+    if store_record.get("status") not in ("published", "active"):
+        raise HTTPException(
+            status_code=400,
+            detail="La boutique n'est pas disponible pour recevoir des commandes (statut non publié)"
+        )
     if store_record.get("status") == "suspended":
-        raise HTTPException(status_code=403, detail="Cette boutique est actuellement suspendue")
+        raise HTTPException(
+            status_code=400,
+            detail="Cette boutique est actuellement suspendue"
+        )
 
     store_settings = store_record.get("settings") or {}
     security = store_settings.get("security") or {}
 
-    # ─── Sécurité COD & Anti-Fake Orders (Spécial Algérie) ───────────────────
+    # 2. Validation minimale des champs client
+    # Nom : 2 à 80 caractères
+    raw_name = (req.customer_name or "").strip()
+    if len(raw_name) < 2 or len(raw_name) > 80:
+        raise HTTPException(
+            status_code=400,
+            detail="Le nom du client doit comporter entre 2 et 80 caractères"
+        )
+
+    # Téléphone au format algérien (05, 06, 07 suivi de 8 chiffres, ou +213)
     clean_dz_phone = normalize_dz_phone(req.customer_phone)
+    if not is_valid_strict_dz_phone(clean_dz_phone):
+        raise HTTPException(
+            status_code=400,
+            detail="Numéro de téléphone algérien invalide. Il doit comporter 10 chiffres et commencer par 05, 06 ou 07 (ou format international +213)."
+        )
 
-    # A. Validation stricte numéro DZ (10 chiffres commençant par 05, 06 ou 07)
-    if security.get("strict_dz_phone", True):
-        if not is_valid_strict_dz_phone(clean_dz_phone):
-            raise HTTPException(
-                status_code=400,
-                detail="Numéro de téléphone algérien invalide. Il doit comporter 10 chiffres et commencer obligatoirement par 05, 06 ou 07."
-            )
-
-    # B. Vérification Liste Noire (Blacklist)
+    # Vérification Liste Noire (Blacklist)
     blacklist = security.get("blacklist") or []
     if blacklist:
         normalized_blacklist = {normalize_dz_phone(b) for b in blacklist if b}
@@ -234,7 +218,7 @@ async def create_order(
                 detail="Ce numéro de téléphone n'est pas autorisé à passer commande sur cette boutique."
             )
 
-    # C. Anti-Spam commandes (limite à 2 commandes sur 24h par numéro)
+    # Anti-Spam commandes (limite à 2 commandes sur 24h par numéro)
     if security.get("anti_spam_orders"):
         cutoff_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
         try:
@@ -259,43 +243,191 @@ async def create_order(
         except Exception as e:
             logger.warning(f"Vérification anti-spam non bloquante échouée: {e}")
 
-    # 4. Calcul du montant total
-    if req.total_amount is not None and req.total_amount > 0:
-        total_amount = float(req.total_amount)
-    elif product:
-        subtotal = float(product.get("price", 0.0)) * max(1, req.qty or 1)
-        total_amount = subtotal + delivery_cost
-    elif items:
-        subtotal = sum(float(it.get("price", 0)) * int(it.get("quantity", 1)) for it in items)
-        total_amount = subtotal + delivery_cost
+    # Mode de livraison (domicile ou stopdesk)
+    ship_mode = (req.ship_mode or "domicile").lower().strip()
+    if ship_mode not in ("domicile", "stopdesk", "stop-desk"):
+        raise HTTPException(
+            status_code=400,
+            detail="Mode de livraison invalide. Choisissez 'domicile' ou 'stopdesk'."
+        )
+    is_home = ship_mode == "domicile"
+
+    # Wilaya (entier entre 1 et 58)
+    try:
+        wilaya_id = int(req.wilaya_id) if req.wilaya_id is not None else None
+    except (ValueError, TypeError):
+        wilaya_id = None
+
+    if wilaya_id is None or wilaya_id < 1 or wilaya_id > 58:
+        raise HTTPException(
+            status_code=400,
+            detail="Wilaya de livraison invalide ou inconnue (doit être un entier entre 1 et 58)."
+        )
+
+    # Frais de livraison : lus dans shipping_rates de CETTE boutique
+    delivery_cost = None
+    wilaya_name = req.wilaya or ""
+
+    try:
+        sr_res = (
+            supabase.table("shipping_rates")
+            .select("price_home, price_desk")
+            .eq("store_id", store_record["id"])
+            .eq("wilaya_id", wilaya_id)
+            .execute()
+        )
+        if sr_res.data:
+            delivery_cost = float(sr_res.data[0]["price_home"] if is_home else sr_res.data[0]["price_desk"])
+    except Exception as e:
+        logger.warning("Erreur lecture shipping_rates pour store %s, repli: %s", store_record["id"], e)
+
+    # Repli sur la table wilayas seulement s'il n'existe pas de ligne pour cette boutique
+    if delivery_cost is None:
+        try:
+            w_res = supabase.table("wilayas").select("name, price_home, price_desk").eq("id", wilaya_id).execute()
+            if w_res.data:
+                wilaya_name = wilaya_name or w_res.data[0].get("name")
+                delivery_cost = float(w_res.data[0]["price_home"] if is_home else w_res.data[0]["price_desk"])
+        except Exception as e:
+            logger.warning("Erreur lecture table wilayas (%s), repli mémoire", e)
+
+    if delivery_cost is None and wilaya_id in DEFAULT_WILAYAS_DATA:
+        name, p_home, p_desk, _ = DEFAULT_WILAYAS_DATA[wilaya_id]
+        wilaya_name = wilaya_name or name
+        delivery_cost = float(p_home if is_home else p_desk)
+
+    if delivery_cost is None or delivery_cost < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Tarif de livraison introuvable pour cette wilaya."
+        )
+
+    # Adresse : 5 à 300 caractères
+    raw_address = (req.customer_address or "").strip()
+    if raw_address:
+        full_address = raw_address
     else:
-        total_amount = 0.0
+        commune = (req.customer_commune or req.commune or "").strip()
+        mode_str = "À domicile" if is_home else "Stop Desk"
+        parts = []
+        if wilaya_name:
+            parts.append(f"Wilaya: {wilaya_name} ({mode_str})")
+        if commune:
+            parts.append(f"Commune: {commune}")
+        full_address = " — ".join(parts)
 
-    # 5. Formatage de l'adresse
-    mode_str = "À domicile" if req.ship_mode == "domicile" else "Stop Desk"
-    address_parts = []
-    if wilaya_name:
-        address_parts.append(f"Wilaya: {wilaya_name} ({mode_str})")
-    if req.customer_address:
-        address_parts.append(req.customer_address.strip())
-    full_address = " — ".join(address_parts) if address_parts else "Non spécifiée"
+    if len(full_address) < 5 or len(full_address) > 300:
+        raise HTTPException(
+            status_code=400,
+            detail="L'adresse de livraison doit comporter entre 5 et 300 caractères."
+        )
 
-    payment_label = {
-        "cod": "Paiement à la livraison",
-        "baridimob": "BaridiMob / CCP",
-        "stripe": "Carte bancaire (Stripe)",
-    }.get(req.payment_method or "cod", req.payment_method or "Paiement à la livraison")
+    # Notes : 500 caractères maximum
+    raw_notes = (req.notes or "").strip()
+    if len(raw_notes) > 500:
+        raise HTTPException(
+            status_code=400,
+            detail="La note de commande ne doit pas dépasser 500 caractères."
+        )
+    clean_notes = raw_notes if raw_notes else None
 
-    clean_notes = req.notes.strip() if (req.notes and req.notes.strip()) else None
+    # 3. Articles de la commande et recalcul strict des prix en base
+    raw_items = []
+    if req.items and len(req.items) > 0:
+        raw_items = req.items
+    elif req.product_id:
+        raw_items = [
+            {
+                "product_id": req.product_id,
+                "qty": req.qty if req.qty is not None else 1,
+                "options_selected": req.options_selected or {},
+            }
+        ]
+
+    if len(raw_items) == 0:
+        raise HTTPException(status_code=400, detail="La commande doit contenir au moins un article.")
+
+    if len(raw_items) > MAX_ITEMS_PER_ORDER:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Une commande ne peut pas contenir plus de {MAX_ITEMS_PER_ORDER} articles."
+        )
+
+    subtotal = 0.0
+    validated_items = []
+
+    for item in raw_items:
+        p_id = item.get("product_id") or item.get("id")
+        if not p_id or not str(p_id).strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Identifiant de produit manquant pour un article de la commande."
+            )
+
+        raw_qty = item.get("qty") if item.get("qty") is not None else item.get("quantity")
+        if (
+            not isinstance(raw_qty, int)
+            or isinstance(raw_qty, bool)
+            or raw_qty < MIN_QTY_PER_ITEM
+            or raw_qty > MAX_QTY_PER_ITEM
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=f"La quantité de chaque article doit être un entier compris entre {MIN_QTY_PER_ITEM} et {MAX_QTY_PER_ITEM}."
+            )
+
+        prod_res = (
+            supabase.table("products")
+            .select("id, name, price, status, store_id, images, options")
+            .eq("id", str(p_id).strip())
+            .execute()
+        )
+        if not prod_res.data:
+            raise HTTPException(status_code=400, detail="Produit introuvable en base de données.")
+
+        db_product = prod_res.data[0]
+        if str(db_product.get("store_id")) != str(store_record["id"]):
+            raise HTTPException(
+                status_code=400,
+                detail="Le produit spécifié n'appartient pas à cette boutique."
+            )
+
+        if db_product.get("status") != "active":
+            raise HTTPException(
+                status_code=400,
+                detail="Le produit spécifié n'est pas actif."
+            )
+
+        db_price = float(db_product.get("price", 0.0))
+        if db_price < 0:
+            raise HTTPException(status_code=400, detail="Prix de produit invalide en base.")
+
+        # Le montant est toujours recalculé côté serveur à partir du prix en base
+        subtotal += db_price * raw_qty
+
+        images_list = db_product.get("images") or []
+        first_image = images_list[0] if isinstance(images_list, list) and len(images_list) > 0 else None
+
+        validated_items.append({
+            "product_id": db_product.get("id"),
+            "name": db_product.get("name"),
+            "price": db_price,
+            "quantity": raw_qty,
+            "options_selected": item.get("options_selected") or {},
+            "image": first_image,
+        })
+
+    # Montant total recalculé côté serveur (le total_amount envoyé par le client est ignoré)
+    total_amount = round(subtotal + delivery_cost, 2)
 
     payload = {
-        "store_id": store_id,
-        "customer_name": req.customer_name.strip(),
-        "customer_phone": clean_dz_phone or req.customer_phone.strip(),
+        "store_id": store_record["id"],
+        "customer_name": raw_name,
+        "customer_phone": clean_dz_phone,
         "customer_email": req.customer_email,
         "customer_address": full_address,
-        "items": items,
-        "total_amount": round(total_amount, 2),
+        "items": validated_items,
+        "total_amount": total_amount,
         "status": "pending",
         "payment_status": "pending",
         "notes": clean_notes,
@@ -320,9 +452,9 @@ async def create_order(
 
         # ─── Déduction automatique des stocks ─────────────────────────────────
         try:
-            for item in items:
-                prod_id = item.get("product_id") or item.get("id")
-                qty = max(1, int(item.get("quantity", 1)))
+            for item in validated_items:
+                prod_id = item.get("product_id")
+                qty = item.get("quantity", 1)
                 if not prod_id:
                     continue
 
@@ -358,6 +490,8 @@ async def create_order(
             "message": "Commande enregistrée avec succès",
             "order_id": created_order.get("id"),
             "total_amount": total_amount,
+            "subtotal": round(subtotal, 2),
+            "shipping_fee": round(delivery_cost, 2),
             "order": created_order,
         }
 
