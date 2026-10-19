@@ -45,12 +45,46 @@ export async function PATCH(
 
     const body = await req.json();
 
-    // Prevent overwriting owner_id or id
-    delete body.id;
-    delete body.owner_id;
+    // ── Whitelist stricte des champs modifiables ────────────────────────────
+    // Bannit formellement la modification de slug, owner_id, id, status,
+    // published_url, vercel_project_id, github_repo, subdomain, generated_html
+    const ALLOWED_STORE_PATCH_FIELDS = [
+      "name",
+      "category",
+      "description",
+      "slogan",
+      "currency",
+      "city",
+      "country",
+      "primary_color",
+      "font_family",
+      "logo_url",
+      "whatsapp_phone",
+      "theme",
+      "animation_style",
+      "special_effects",
+      "type",
+      "seo_title",
+      "seo_description",
+      "seo_metadata",
+      "custom_domain",
+      "facebook_pixel_id",
+      "tiktok_pixel_id",
+      "google_analytics_id",
+      "payment_settings",
+      "settings",
+      "content_overrides",
+    ] as const;
+
+    const filteredBody: Record<string, any> = {};
+    for (const key of ALLOWED_STORE_PATCH_FIELDS) {
+      if (key in body && body[key] !== undefined) {
+        filteredBody[key] = body[key];
+      }
+    }
 
     // Protection plan pour domaine personnalisé
-    if (body.custom_domain && typeof body.custom_domain === "string" && body.custom_domain.trim()) {
+    if (filteredBody.custom_domain && typeof filteredBody.custom_domain === "string" && filteredBody.custom_domain.trim()) {
       const { getUserPlan } = await import("@/lib/plan-limits-server");
       const userPlan = await getUserPlan(user.id, admin);
       if (!userPlan.canUseCustomDomain) {
@@ -69,8 +103,8 @@ export async function PATCH(
 
     // Protection plan pour multi-pixels (TikTok & Google Analytics)
     if (
-      (body.tiktok_pixel_id && typeof body.tiktok_pixel_id === "string" && body.tiktok_pixel_id.trim()) ||
-      (body.google_analytics_id && typeof body.google_analytics_id === "string" && body.google_analytics_id.trim())
+      (filteredBody.tiktok_pixel_id && typeof filteredBody.tiktok_pixel_id === "string" && filteredBody.tiktok_pixel_id.trim()) ||
+      (filteredBody.google_analytics_id && typeof filteredBody.google_analytics_id === "string" && filteredBody.google_analytics_id.trim())
     ) {
       const { getUserPlan } = await import("@/lib/plan-limits-server");
       const userPlan = await getUserPlan(user.id, admin);
@@ -89,15 +123,17 @@ export async function PATCH(
     }
 
     // If type is updated, keep seo_metadata in sync
-    if (body.type && check.store) {
+    if (filteredBody.type && check.store) {
       const currentMeta = (typeof check.store.seo_metadata === "object" && check.store.seo_metadata !== null)
         ? { ...check.store.seo_metadata }
         : {};
-      currentMeta.type = body.type;
-      body.seo_metadata = body.seo_metadata ? { ...body.seo_metadata, type: body.type } : currentMeta;
+      currentMeta.type = filteredBody.type;
+      filteredBody.seo_metadata = filteredBody.seo_metadata
+        ? { ...filteredBody.seo_metadata, type: filteredBody.type }
+        : currentMeta;
     }
 
-    const { data: updated, error } = await safeUpdate("stores", body, "id", id, admin);
+    const { data: updated, error } = await safeUpdate("stores", filteredBody, "id", id, admin);
 
     if (error) {
       console.error("Update store error:", error);

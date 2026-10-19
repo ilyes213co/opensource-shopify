@@ -211,9 +211,44 @@ class StoreDeployer:
             raise ValueError(f"Store {store_id} not found")
 
         self._ensure_required_tokens()
-        slug       = store["slug"]
-        repo_name  = f"store-{slug}"
-        owner      = self._require_configured_owner()
+        slug = store["slug"]
+        owner = self._require_configured_owner()
+
+        # 1. Utiliser le github_repo déjà stocké s'il existe, sinon convention store-{slug}
+        stored_repo = (store.get("github_repo") or "").strip()
+        if stored_repo:
+            repo_name = stored_repo.rstrip("/").split("/")[-1]
+        else:
+            repo_name = f"store-{slug}"
+
+        # 2. Sécurité anti-écrasement : refuser d'écraser un dépôt ou projet lié à un autre store_id
+        try:
+            other_stores_res = (
+                supabase.table("stores")
+                .select("id, name, slug, github_repo, vercel_project_id")
+                .neq("id", store_id)
+                .execute()
+            )
+            for other in (other_stores_res.data or []):
+                other_repo = (other.get("github_repo") or "").strip()
+                if other_repo:
+                    other_repo_name = other_repo.rstrip("/").split("/")[-1]
+                    if other_repo_name.lower() == repo_name.lower():
+                        raise RuntimeError(
+                            f"Conflit de déploiement : le dépôt GitHub '{repo_name}' est déjà associé à la boutique "
+                            f"'{other.get('name')}' (ID: {other.get('id')}). Déploiement refusé pour éviter tout écrasement."
+                        )
+                # Vérification collision sur vercel_project_id
+                stored_project = store.get("vercel_project_id")
+                if stored_project and other.get("vercel_project_id") == stored_project:
+                    raise RuntimeError(
+                        f"Conflit de déploiement : le projet Vercel '{stored_project}' est déjà associé à la boutique "
+                        f"'{other.get('name')}' (ID: {other.get('id')}). Déploiement refusé pour éviter tout écrasement."
+                    )
+        except RuntimeError:
+            raise
+        except Exception as query_err:
+            logger.warning("Vérification des conflits de déploiement non bloquante: %s", query_err)
 
         logger.info(
             "Deploy start store_id=%s owner=%s repo=%s",
@@ -267,9 +302,6 @@ class StoreDeployer:
                     )
 
             # ── Step 5: Choose the public URL ──────────────────────────
-            #
-            # Priority: verified custom domain if DNS resolves, otherwise
-            # the permanent functional Vercel URL https://store-{slug}.vercel.app
             canonical_vercel_url = f"https://{repo_name}.vercel.app"
             if custom_domain_ok:
                 published_url = f"https://{subdomain}"
@@ -277,13 +309,17 @@ class StoreDeployer:
                 published_url = canonical_vercel_url
 
             # ── Step 6: Update Supabase store record ────────────────────
-            supabase.table("stores").update({
+            update_data = {
                 "vercel_project_id": project_id,
                 "subdomain": subdomain if custom_domain_ok else f"{repo_name}.vercel.app",
                 "published_url": published_url,
                 "status": "published",
                 "generated_html": html,
-            }).eq("id", store_id).execute()
+            }
+            if github_url or not store.get("github_repo"):
+                update_data["github_repo"] = github_url or f"{owner}/{repo_name}"
+
+            supabase.table("stores").update(update_data).eq("id", store_id).execute()
 
             logger.info(
                 "Store %s deployed successfully: %s (github=%s, project=%s)",

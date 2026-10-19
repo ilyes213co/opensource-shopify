@@ -56,18 +56,14 @@ export async function getAuthUser(req: NextRequest) {
   return null;
 }
 
+import { normalizeSlug } from "@/lib/slug-utils";
+
 export function slugify(text: string): string {
-  if (!text) return "";
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return normalizeSlug(text);
 }
 
 export async function getUniqueStoreSlug(baseName: string, adminClient = getAdminClient()): Promise<string> {
-  const cleanBase = slugify(baseName) || "store";
+  const cleanBase = normalizeSlug(baseName);
   let slug = cleanBase;
   let counter = 1;
 
@@ -75,7 +71,7 @@ export async function getUniqueStoreSlug(baseName: string, adminClient = getAdmi
     const { data } = await adminClient
       .from("stores")
       .select("id")
-      .eq("slug", slug)
+      .ilike("slug", slug)
       .maybeSingle();
 
     if (!data) {

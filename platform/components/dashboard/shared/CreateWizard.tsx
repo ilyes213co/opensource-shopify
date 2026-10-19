@@ -8,7 +8,8 @@ import {
   Loader2, Sparkles, X,
   RefreshCw, Rocket, Plus, Wand2,
   Layers, Phone, FileText, CheckCircle2,
-  DollarSign, Star, Crown, Lock
+  DollarSign, Star, Crown, Lock,
+  AlertCircle, XCircle, Copy, ExternalLink
 } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -85,6 +86,7 @@ type WizardProductDraft = Omit<Partial<Product>, "images"> & {
 
 interface WizardState {
   name: string;
+  slug: string;
   category: string;
   description: string;
   whatsapp_phone: string;
@@ -103,6 +105,7 @@ const getInitialState = (type: "boutique" | "funnel"): WizardState => {
   const defaultColor = isFunnel ? "#9c1220" : "#0d0d0d";
   return {
     name: "",
+    slug: "",
     category: CATEGORIES[0] || "Autre",
     description: "",
     whatsapp_phone: "",
@@ -142,6 +145,7 @@ function serializeWizardDraft(state: WizardState) {
 
 const step1Schema = z.object({
   name: z.string().min(2, "Le nom doit comporter au moins 2 caractères").max(60),
+  slug: z.string().min(3, "L'adresse doit comporter au moins 3 caractères").max(40),
   category: z.string().min(1, "Choisissez une catégorie"),
   description: z.string().max(300, "Description limitée à 300 caractères").optional(),
   whatsapp_phone: z.string().refine((val) => {
@@ -172,6 +176,79 @@ export default function CreateWizard({ type }: CreateWizardProps) {
 
   const userPlan = useUserPlan();
 
+  // Slug verification state
+  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken" | "reserved" | "invalid">("idle");
+  const [slugMessage, setSlugMessage] = useState<string | null>(null);
+  const [slugSuggestions, setSlugSuggestions] = useState<string[]>([]);
+  const [isSlugManual, setIsSlugManual] = useState(false);
+  const [createdStore, setCreatedStore] = useState<{ id: string; name: string; slug: string; requestedSlug: string } | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+
+  // Synchronisation du slug depuis le nom tant qu'aucune saisie manuelle n'a eu lieu
+  const handleNameChange = (newName: string) => {
+    setData((p) => {
+      const next = { ...p, name: newName };
+      if (!isSlugManual) {
+        const raw = newName.trim().toLowerCase();
+        next.slug = raw
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 40);
+      }
+      return next;
+    });
+  };
+
+  const handleSlugChange = (newSlug: string) => {
+    setIsSlugManual(true);
+    const clean = newSlug
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
+      .slice(0, 40);
+    setData((p) => ({ ...p, slug: clean }));
+  };
+
+  // Vérification en direct (debounce 400 ms) avec 4 états clairs
+  useEffect(() => {
+    const slugToTest = data.slug.trim();
+    if (!slugToTest) {
+      setSlugStatus("idle");
+      setSlugMessage(null);
+      setSlugSuggestions([]);
+      return;
+    }
+
+    setSlugStatus("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/stores/slug-available?slug=${encodeURIComponent(slugToTest)}&store_type=${type}`
+        );
+        const json = await res.json();
+        if (res.ok) {
+          setSlugStatus(json.status);
+          setSlugMessage(json.reason || (json.status === "available" ? "Adresse disponible !" : null));
+          setSlugSuggestions(json.suggestions || []);
+          if (json.normalized && !isSlugManual && json.normalized !== data.slug) {
+            setData((p) => ({ ...p, slug: json.normalized }));
+          }
+        } else {
+          setSlugStatus("invalid");
+          setSlugMessage(json.detail || "Erreur de validation");
+          setSlugSuggestions([]);
+        }
+      } catch (e) {
+        setSlugStatus("idle");
+        setSlugMessage("Erreur de connexion lors de la vérification");
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [data.slug, type, isSlugManual]);
 
   // Upgrade Modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -264,7 +341,12 @@ export default function CreateWizard({ type }: CreateWizardProps) {
         errs[e.path[0] as string] = e.message;
       });
       setErrors(errs);
-      toast.error("Veuillez renseigner correctement le nom et le numéro WhatsApp (section 1).");
+      toast.error("Veuillez renseigner correctement le nom, l'adresse et le numéro WhatsApp (section 1).");
+      document.getElementById("section-identity")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (slugStatus !== "available") {
+      toast.error("Veuillez choisir une adresse de page valide et disponible (section 1).");
       document.getElementById("section-identity")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -364,10 +446,10 @@ export default function CreateWizard({ type }: CreateWizardProps) {
     setGenStep(1);
     setGenMessage(`Création de votre ${isFunnel ? "funnel mono-produit" : "boutique"}...`);
 
-    const generatedSlug = slugify(data.name);
+    const requestedSlug = data.slug.trim().toLowerCase();
     const storePayload = {
       name: data.name,
-      ...(generatedSlug.length >= 2 ? { slug: generatedSlug } : {}),
+      slug: requestedSlug || undefined,
       description: data.description || undefined,
       whatsapp_phone: data.whatsapp_phone.replace(/\s+/g, ""),
       category: data.category || undefined,
@@ -496,7 +578,13 @@ export default function CreateWizard({ type }: CreateWizardProps) {
       clearPendingDeploy();
       localStorage.removeItem(DRAFT_KEY);
       toast.success(`${isFunnel ? "Funnel" : "Boutique"} créé(e) avec succès !`);
-      router.push(`/dashboard/${type}/${store.id}`);
+      setCreatedStore({
+        id: store.id,
+        name: store.name,
+        slug: store.slug,
+        requestedSlug: requestedSlug,
+      });
+      setIsGenerating(false);
     } catch (err: any) {
       setIsGenerating(false);
       const data = err?.response?.data;
@@ -518,6 +606,95 @@ export default function CreateWizard({ type }: CreateWizardProps) {
       }
     }
   };
+
+  if (createdStore) {
+    const finalUrl = `https://easytradez.site/${createdStore.slug}`;
+    const wasAdjusted = createdStore.requestedSlug && createdStore.slug !== createdStore.requestedSlug;
+
+    return (
+      <div className="min-h-[75vh] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-full max-w-lg space-y-8 animate-in fade-in zoom-in-95 duration-300 bg-white dark:bg-[#0c0d1e] p-8 sm:p-10 rounded-3xl border border-slate-200/90 dark:border-white/10 shadow-2xl">
+          <div className="relative h-20 w-20 mx-auto">
+            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" />
+            <div className="relative bg-gradient-to-tr from-emerald-600 to-emerald-400 rounded-full h-20 w-20 flex items-center justify-center shadow-xl shadow-emerald-500/40">
+              <CheckCircle2 className="w-10 h-10 text-white" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              Félicitations ! Votre {isFunnel ? "Funnel" : "Boutique"} est en ligne 🎉
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-white/60">
+              Votre page est prête et active. Vous pouvez dès maintenant partager son adresse et recevoir vos premières commandes.
+            </p>
+          </div>
+
+          {wasAdjusted && (
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs text-left">
+              ℹ️ L&apos;adresse demandée ({createdStore.requestedSlug}) a été prise lors d&apos;une création simultanée. Votre page a été automatiquement attribuée à l&apos;adresse <strong>{createdStore.slug}</strong>.
+            </div>
+          )}
+
+          {/* URL Box */}
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-white/40">
+                Adresse finale de votre page
+              </p>
+              <p className="text-sm font-mono font-bold text-accent dark:text-[#93c5fd] truncate mt-0.5">
+                {finalUrl}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(finalUrl);
+                  setCopiedUrl(true);
+                  toast.success("Lien copié dans le presse-papier !");
+                  setTimeout(() => setCopiedUrl(false), 2500);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-xs font-bold text-slate-800 dark:text-white transition-colors cursor-pointer"
+              >
+                {copiedUrl ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Copié !</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copier</span>
+                  </>
+                )}
+              </button>
+              <a
+                href={finalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-xs font-bold text-slate-800 dark:text-white transition-colors"
+                title="Ouvrir dans un nouvel onglet"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Action CTA */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => router.push(`/dashboard/${type}/${createdStore.id}`)}
+              className="w-full py-4 rounded-xl font-bold text-sm text-white bg-accent hover:bg-accent/90 shadow-lg shadow-accent/25 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+            >
+              Accéder au tableau de bord →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const generatingSteps = [
     `Création de la base du ${isFunnel ? "funnel" : "store"}`,
@@ -645,6 +822,11 @@ export default function CreateWizard({ type }: CreateWizardProps) {
           errors={errors}
           type={type}
           setLogoFile={setLogoFile}
+          slugStatus={slugStatus}
+          slugMessage={slugMessage}
+          slugSuggestions={slugSuggestions}
+          onNameChange={handleNameChange}
+          onSlugChange={handleSlugChange}
         />
       </section>
 
@@ -694,8 +876,8 @@ export default function CreateWizard({ type }: CreateWizardProps) {
         <button
           type="button"
           onClick={handleValidateAndSubmit}
-          disabled={isGenerating || !!pendingDeploy}
-          className="w-full sm:w-auto flex items-center justify-center gap-2.5 text-white px-8 py-3.5 rounded-xl font-bold text-sm bg-accent hover:bg-accent/90 shadow-lg shadow-accent/25 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+          disabled={isGenerating || !!pendingDeploy || slugStatus !== "available"}
+          className="w-full sm:w-auto flex items-center justify-center gap-2.5 text-white px-8 py-3.5 rounded-xl font-bold text-sm bg-accent hover:bg-accent/90 shadow-lg shadow-accent/25 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <Sparkles className="w-4 h-4 text-sky-200" />
           <span>
@@ -733,12 +915,22 @@ function Step1Redesigned({
   errors,
   type,
   setLogoFile,
+  slugStatus,
+  slugMessage,
+  slugSuggestions,
+  onNameChange,
+  onSlugChange,
 }: {
   data: WizardState;
   setData: any;
   errors: any;
   type: "boutique" | "funnel";
   setLogoFile: (file: File | null) => void;
+  slugStatus: "idle" | "checking" | "available" | "taken" | "reserved" | "invalid";
+  slugMessage: string | null;
+  slugSuggestions: string[];
+  onNameChange: (val: string) => void;
+  onSlugChange: (val: string) => void;
 }) {
   const isFunnel = type === "funnel";
 
@@ -792,7 +984,7 @@ function Step1Redesigned({
                 type="text"
                 placeholder={isFunnel ? "Ex : Sérum Éclat Naturel" : "Ex : Dz Luxe Store"}
                 value={data.name}
-                onChange={(e) => setData((p: any) => ({ ...p, name: e.target.value }))}
+                onChange={(e) => onNameChange(e.target.value)}
                 className={cn(
                   "w-full px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 bg-slate-50 dark:bg-white/[0.04] border focus:outline-none focus:bg-white dark:focus:bg-white/[0.06] transition-all",
                   errors.name ? "border-rose-500" : "border-slate-200/90 dark:border-white/10 focus:border-accent"
@@ -800,6 +992,82 @@ function Step1Redesigned({
               />
             </div>
             {errors.name && <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">{errors.name}</p>}
+          </div>
+
+          {/* Adresse de votre page (URL Slug) */}
+          <div className="space-y-1.5 text-left">
+            <label className="text-xs font-bold text-slate-700 dark:text-white/80 flex items-center justify-between">
+              <span>Adresse de votre page (URL) <span className="text-red-500">*</span></span>
+              <span className="text-[10px] text-slate-400 dark:text-white/40">Minuscules, chiffres et tirets</span>
+            </label>
+            <div className="relative flex items-stretch rounded-xl border border-slate-200/90 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] focus-within:border-accent focus-within:bg-white dark:focus-within:bg-white/[0.06] transition-all overflow-hidden">
+              <span className="px-3.5 flex items-center text-xs font-mono font-medium text-slate-400 dark:text-white/40 bg-slate-100 dark:bg-white/[0.02] border-r border-slate-200/90 dark:border-white/10 select-none">
+                easytradez.site/
+              </span>
+              <input
+                type="text"
+                placeholder="mon-adresse"
+                value={data.slug}
+                onChange={(e) => onSlugChange(e.target.value)}
+                className="w-full px-3.5 py-3 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 bg-transparent focus:outline-none"
+              />
+              <div className="pr-3.5 flex items-center">
+                {slugStatus === "checking" && (
+                  <span title="Vérification en cours..."><Loader2 className="w-4 h-4 text-accent animate-spin" /></span>
+                )}
+                {slugStatus === "available" && (
+                  <span title="Adresse disponible"><CheckCircle2 className="w-4 h-4 text-emerald-500" /></span>
+                )}
+                {slugStatus === "taken" && (
+                  <span title="Adresse déjà occupée"><AlertCircle className="w-4 h-4 text-amber-500" /></span>
+                )}
+                {(slugStatus === "reserved" || slugStatus === "invalid") && (
+                  <span title="Adresse indisponible"><XCircle className="w-4 h-4 text-rose-500" /></span>
+                )}
+              </div>
+            </div>
+
+            {/* Statuts & Suggestions cliquables */}
+            {slugStatus === "available" && (
+              <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> Adresse disponible !
+              </p>
+            )}
+
+            {slugStatus === "reserved" && (
+              <p className="text-[11px] font-medium text-rose-500 dark:text-rose-400">
+                ⛔ {slugMessage || "Cette adresse est réservée par le système."}
+              </p>
+            )}
+
+            {slugStatus === "invalid" && (
+              <p className="text-[11px] font-medium text-rose-500 dark:text-rose-400">
+                ❌ {slugMessage || "Format invalide (3 à 40 lettres, chiffres et tirets uniques)."}
+              </p>
+            )}
+
+            {slugStatus === "taken" && (
+              <div className="space-y-1">
+                <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                  ⚠️ Cette adresse est déjà occupée.
+                </p>
+                {slugSuggestions && slugSuggestions.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    <span className="text-[10px] text-slate-400 dark:text-white/40">Suggestions :</span>
+                    {slugSuggestions.map((sug) => (
+                      <button
+                        key={sug}
+                        type="button"
+                        onClick={() => onSlugChange(sug)}
+                        className="px-2 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-mono text-[11px] border border-amber-500/30 transition-colors cursor-pointer"
+                      >
+                        {sug}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Category */}

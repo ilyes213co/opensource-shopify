@@ -159,8 +159,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const slug = await getUniqueStoreSlug(body.slug || name, admin);
     const storeType = body.type === "funnel" ? "funnel" : "boutique";
+
+    // ── Détermination et validation stricte du slug ─────────────────────────
+    const {
+      normalizeSlug,
+      isSlugReserved,
+      validateSlugFormat,
+      getCandidateSlug,
+      isUniqueSlugViolation,
+    } = await import("@/lib/slug-utils");
+
+    let baseSlug = "";
+    if (body.slug && typeof body.slug === "string" && body.slug.trim()) {
+      baseSlug = normalizeSlug(body.slug.trim(), storeType);
+      if (isSlugReserved(baseSlug)) {
+        return NextResponse.json(
+          { detail: "Cette adresse est réservée par le système EasyTrade." },
+          { status: 400 }
+        );
+      }
+      const { isValid, reason } = validateSlugFormat(baseSlug);
+      if (!isValid) {
+        return NextResponse.json({ detail: reason }, { status: 400 });
+      }
+    } else {
+      baseSlug = normalizeSlug(name, storeType);
+      if (isSlugReserved(baseSlug)) {
+        baseSlug = `${baseSlug}-1`;
+      }
+    }
 
     const seoMetadata = typeof body.seo_metadata === "object" && body.seo_metadata !== null
       ? { ...body.seo_metadata, type: storeType }
@@ -178,10 +206,9 @@ export async function POST(req: NextRequest) {
       contentOverrides.payment_settings = body.payment_settings;
     }
 
-    const storeData: Record<string, any> = {
+    const storeBaseData: Record<string, any> = {
       owner_id: user.id,
       name,
-      slug,
       description: body.description || null,
       primary_color: body.primary_color || "#6366f1",
       whatsapp_phone: body.whatsapp_phone || null,
@@ -196,11 +223,42 @@ export async function POST(req: NextRequest) {
       content_overrides: contentOverrides,
     };
 
-    const { data: created, error } = await safeInsert("stores", storeData, admin);
+    // ── Insertion atomique avec retry loop sur collision 23505 (max 5 tentatives) ──
+    const maxAttempts = 5;
+    let created: any = null;
+    let lastError: any = null;
 
-    if (error) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const candidateSlug = getCandidateSlug(baseSlug, attempt);
+      const attemptData = { ...storeBaseData, slug: candidateSlug };
+
+      const { data, error } = await safeInsert("stores", attemptData, admin);
+      if (!error && data) {
+        created = data;
+        break;
+      }
+
+      if (isUniqueSlugViolation(error)) {
+        console.warn(`[POST /api/stores] Collision 23505 pour '${candidateSlug}' (tentative ${attempt + 1}/${maxAttempts})`);
+        lastError = error;
+        continue;
+      }
+
       console.error("Supabase insert store error:", error);
-      return NextResponse.json({ detail: `Erreur Supabase: ${error.message}` }, { status: 500 });
+      return NextResponse.json(
+        { detail: `Erreur Supabase: ${error?.message || "Erreur inconnue"}` },
+        { status: 500 }
+      );
+    }
+
+    if (!created) {
+      return NextResponse.json(
+        {
+          detail:
+            "Impossible d'attribuer une adresse unique après 5 tentatives. Veuillez choisir un autre nom ou une adresse personnalisée.",
+        },
+        { status: 409 }
+      );
     }
 
     return NextResponse.json(created, { status: 201 });

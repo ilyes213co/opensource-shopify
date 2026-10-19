@@ -12,17 +12,137 @@ from plan_guard import (
 import re
 import logging
 import asyncio
+import time
+from collections import defaultdict
+
+from slug_utils import (
+    normalize_slug,
+    is_slug_reserved,
+    validate_slug_format,
+    get_candidate_slug,
+    is_unique_slug_violation,
+)
 
 router = APIRouter()
 logger = logging.getLogger("storegen.stores")
 
 
+class SlidingWindowLimiter:
+    """Limiteur de débit glissant en mémoire par identifiant utilisateur."""
+    def __init__(self, max_requests: int = 60, window_seconds: int = 60):
+        self.max_requests = max_requests
+        self.window_seconds = window_seconds
+        self.requests: dict[str, list[float]] = defaultdict(list)
+
+    def check(self, key: str) -> bool:
+        now = time.time()
+        cutoff = now - self.window_seconds
+        self.requests[key] = [t for t in self.requests[key] if t > cutoff]
+        if len(self.requests[key]) >= self.max_requests:
+            return False
+        self.requests[key].append(now)
+        return True
+
+
+slug_rate_limiter = SlidingWindowLimiter(max_requests=60, window_seconds=60)
+
+
 def slugify(text: str) -> str:
-    text = text.lower().strip()
-    text = re.sub(r"[^\w\s-]", "", text)
-    text = re.sub(r"[\s_-]+", "-", text)
-    text = re.sub(r"^-+|-+$", "", text)
-    return text
+    """Rétro-compatibilité : délègue à normalize_slug."""
+    return normalize_slug(text)
+
+
+@router.get("/slug-available")
+async def check_slug_availability(
+    slug: str = Query(..., min_length=1, description="Slug ou nom à tester"),
+    store_type: str = Query("boutique", description="boutique ou funnel"),
+    user=Depends(get_current_user),
+    supabase=Depends(get_supabase),
+):
+    """
+    Vérifie la disponibilité d'un slug pour une boutique ou un funnel.
+    Retourne : available, taken (avec suggestions), reserved ou invalid (avec raison).
+    """
+    if not slug_rate_limiter.check(user.id):
+        raise HTTPException(
+            status_code=429,
+            detail="Trop de requêtes de vérification. Veuillez patienter un instant.",
+        )
+
+    raw_slug = slug.strip().lower()
+    normalized = normalize_slug(slug, store_type)
+
+    # 1. Validation de format
+    is_valid, reason = validate_slug_format(raw_slug)
+    if not is_valid:
+        return {
+            "status": "invalid",
+            "normalized": normalized,
+            "suggestions": [],
+            "reason": reason,
+        }
+
+    # 2. Vérification mot réservé
+    if is_slug_reserved(raw_slug):
+        return {
+            "status": "reserved",
+            "normalized": normalized,
+            "suggestions": [],
+            "reason": "Cette adresse est réservée par le système EasyTrade.",
+        }
+
+    # 3. Vérification unicité insensible à la casse en base
+    try:
+        existing = (
+            supabase.table("stores")
+            .select("id")
+            .ilike("slug", raw_slug)
+            .execute()
+        )
+    except Exception as e:
+        logger.error(f"Error querying slug availability: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la vérification du slug")
+
+    if existing.data:
+        # Générer 2 suggestions disponibles
+        suggestions = []
+        candidate_bases = [
+            f"{raw_slug}-shop",
+            f"{raw_slug}-1",
+            f"{raw_slug}-dz",
+            f"{raw_slug}-store",
+            f"{raw_slug}-2",
+        ]
+        for cand in candidate_bases:
+            if is_slug_reserved(cand):
+                continue
+            cand_valid, _ = validate_slug_format(cand)
+            if not cand_valid:
+                continue
+            chk = (
+                supabase.table("stores")
+                .select("id")
+                .ilike("slug", cand)
+                .execute()
+            )
+            if not chk.data:
+                suggestions.append(cand)
+                if len(suggestions) >= 2:
+                    break
+
+        return {
+            "status": "taken",
+            "normalized": normalized,
+            "suggestions": suggestions,
+            "reason": "Cette adresse est déjà utilisée par une autre boutique.",
+        }
+
+    return {
+        "status": "available",
+        "normalized": raw_slug,
+        "suggestions": [],
+        "reason": None,
+    }
 
 
 @router.post("/", response_model=StoreResponse)
@@ -39,6 +159,7 @@ async def create_store(
         requested_theme=payload.theme,
         supabase=supabase,
     )
+
     async def run_query(executor, timeout_seconds: int = 20):
         try:
             return await asyncio.wait_for(asyncio.to_thread(executor), timeout=timeout_seconds)
@@ -48,25 +169,26 @@ async def create_store(
                 detail="Timeout serveur lors de la communication avec la base de données.",
             )
 
-    base_slug = slugify(payload.name)
-    slug = base_slug
-    counter = 1
-    while True:
-        existing = await run_query(
-            lambda: (
-                supabase.table("stores")
-                .select("id")
-                .eq("slug", slug)
-                .execute()
-            ),
-            timeout_seconds=15,
-        )
-        if not existing.data:
-            break
-        slug = f"{base_slug}-{counter}"
-        counter += 1
-
     store_type = getattr(payload, "type", None) or "boutique"
+
+    # Détermination du slug de base :
+    # Si payload.slug est renseigné explicitement, on le normalise et vérifie strictement.
+    # Sinon, on dérive le slug depuis payload.name.
+    if payload.slug and payload.slug.strip():
+        base_slug = normalize_slug(payload.slug.strip(), store_type)
+        if is_slug_reserved(base_slug):
+            raise HTTPException(
+                status_code=400,
+                detail="Cette adresse est réservée par le système EasyTrade.",
+            )
+        is_valid, reason = validate_slug_format(base_slug)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=reason)
+    else:
+        base_slug = normalize_slug(payload.name, store_type)
+        if is_slug_reserved(base_slug):
+            base_slug = f"{base_slug}-1"
+
     raw_seo = getattr(payload, "seo_metadata", None)
     seo_metadata = dict(raw_seo) if isinstance(raw_seo, dict) else {}
     seo_metadata["type"] = store_type
@@ -74,11 +196,10 @@ async def create_store(
     store_data = {
         "owner_id": user_id,
         "name": payload.name,
-        "slug": slug,
         "description": payload.description,
         "primary_color": payload.primary_color or "#6366f1",
         "whatsapp_phone": payload.whatsapp_phone,
-        "theme": payload.theme or "modern",
+        "theme": payload.theme if (payload.theme and payload.theme != "modern") else "monochrome",
         "animation_style": payload.animation_style or "soft",
         "type": store_type,
         "status": "draft",
@@ -98,35 +219,61 @@ async def create_store(
         },
     }
 
-    try:
-        from db_resilience import safe_insert
-        result = await run_query(
-            lambda: safe_insert("stores", store_data, supabase),
-            timeout_seconds=30,
-        )
+    # ── Insertion atomique avec retry loop sur code 23505 (max 5 tentatives) ──
+    from db_resilience import safe_insert
 
-        if hasattr(result, "error") and result.error:
-            error_msg = result.error.get("message", "") if isinstance(result.error, dict) else str(result.error)
-            logger.error(f"Supabase error creating store: {error_msg}")
-            raise HTTPException(status_code=500, detail=f"Erreur Supabase: {error_msg}")
+    max_attempts = 5
+    created_store = None
+    last_error = None
 
-        if not result.data:
-            logger.error("Supabase returned empty data for insert")
-            raise HTTPException(status_code=500, detail="Erreur lors de la création de la boutique (data vide)")
+    for attempt in range(max_attempts):
+        candidate_slug = get_candidate_slug(base_slug, attempt)
+        attempt_data = dict(store_data)
+        attempt_data["slug"] = candidate_slug
 
-        created_store = result.data[0]
-        if not created_store.get("type"):
-            created_store["type"] = store_type
-        logger.info(f"Store created: {slug} (type: {created_store.get('type')}) for user {user_id}")
-        return created_store
+        try:
+            result = await run_query(
+                lambda: safe_insert("stores", attempt_data, supabase),
+                timeout_seconds=30,
+            )
 
-    except HTTPException:
-        raise  # laisser passer les HTTPException déjà construites
+            if hasattr(result, "error") and result.error:
+                err_dict = result.error if isinstance(result.error, dict) else {"message": str(result.error)}
+                if is_unique_slug_violation(err_dict):
+                    logger.warning(
+                        f"Slug collision 23505 for '{candidate_slug}' (tentative {attempt + 1}/{max_attempts}). Réessai avec variante..."
+                    )
+                    last_error = err_dict
+                    continue
+                error_msg = err_dict.get("message", "")
+                raise HTTPException(status_code=500, detail=f"Erreur Supabase: {error_msg}")
 
-    except Exception as e:
-        error_str = str(e)
-        logger.error(f"Unexpected error creating store: {error_str}")
-        raise HTTPException(status_code=500, detail=f"Erreur interne: {error_str}")
+            if result and result.data:
+                created_store = result.data[0]
+                if not created_store.get("type"):
+                    created_store["type"] = store_type
+                logger.info(f"Store created: {candidate_slug} (type: {created_store.get('type')}) for user {user_id}")
+                return created_store
+
+        except HTTPException:
+            raise
+        except Exception as exc:
+            if is_unique_slug_violation(exc):
+                logger.warning(
+                    f"Slug collision 23505 for '{candidate_slug}' (tentative {attempt + 1}/{max_attempts}). Réessai avec variante..."
+                )
+                last_error = exc
+                continue
+            error_str = str(exc)
+            logger.error(f"Unexpected error creating store: {error_str}")
+            raise HTTPException(status_code=500, detail=f"Erreur interne: {error_str}")
+
+    # Si les 5 tentatives ont échoué par collision d'unicité
+    logger.error(f"Failed to allocate unique slug for '{base_slug}' after {max_attempts} attempts: {last_error}")
+    raise HTTPException(
+        status_code=409,
+        detail="Impossible d'attribuer une adresse unique après 5 tentatives. Veuillez choisir un autre nom ou une adresse personnalisée.",
+    )
 
 
 @router.get("/", response_model=list[StoreResponse])
@@ -192,6 +339,21 @@ async def update_store(
         for key, value in payload.model_dump(exclude_unset=True).items()
         if value is not None
     }
+
+    # Protection absolue : le renommage ou la mise à jour ne modifie JAMAIS le slug ni les clés système
+    for forbidden in (
+        "slug",
+        "id",
+        "owner_id",
+        "status",
+        "published_url",
+        "vercel_project_id",
+        "github_repo",
+        "subdomain",
+        "generated_html",
+        "created_at",
+    ):
+        update_data.pop(forbidden, None)
 
     if "custom_domain" in update_data and update_data["custom_domain"]:
         from plan_guard import get_user_plan, PlanLimitException

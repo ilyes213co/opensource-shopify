@@ -38,11 +38,39 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    delete body.id;
-    delete body.store_id;
 
-    if (body.name && !body.slug) {
-      body.slug = body.name
+    const ALLOWED_PRODUCT_PATCH_FIELDS = [
+      "name",
+      "slug",
+      "description",
+      "price",
+      "compare_price",
+      "cost_price",
+      "stock",
+      "stock_quantity",
+      "status",
+      "category",
+      "images",
+      "options",
+      "is_featured",
+      "position",
+      "seo_title",
+      "seo_description",
+      "shipping_fee",
+      "video_url",
+      "tags",
+      "badge",
+    ] as const;
+
+    const filteredBody: Record<string, any> = {};
+    for (const key of ALLOWED_PRODUCT_PATCH_FIELDS) {
+      if (key in body && body[key] !== undefined) {
+        filteredBody[key] = body[key];
+      }
+    }
+
+    if (filteredBody.name && !filteredBody.slug) {
+      filteredBody.slug = filteredBody.name
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -50,8 +78,8 @@ export async function PATCH(
         .replace(/^-+|-+$/g, "");
     }
 
-    if (body.images && Array.isArray(body.images)) {
-      body.images = body.images.map((img: any, idx: number) => {
+    if (filteredBody.images && Array.isArray(filteredBody.images)) {
+      filteredBody.images = filteredBody.images.map((img: any, idx: number) => {
         if (typeof img === "string") {
           return { url: img, public_id: `img_${Date.now()}_${idx}` };
         }
@@ -59,7 +87,7 @@ export async function PATCH(
       });
     }
 
-    const { data: updated, error } = await safeUpdate("products", body, "id", id, admin);
+    const { data: updated, error } = await safeUpdate("products", filteredBody, "id", id, admin);
 
     if (error) {
       console.error("Update product error:", error);

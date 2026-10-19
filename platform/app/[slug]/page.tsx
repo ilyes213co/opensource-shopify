@@ -1,5 +1,5 @@
 import { getAdminClient } from "@/lib/api-auth";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Store as DbStore, Product as DbProduct } from "@/lib/supabase";
 import ProductPage, { DEFAULT_WILAYAS } from "@/components/ProductPage";
 import FunnelPage from "@/components/FunnelPage";
@@ -22,17 +22,25 @@ interface PageProps {
 export default async function StoreOrFunnelPage({ params, searchParams }: PageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
-  const slug = resolvedParams?.slug;
+  const rawSlug = resolvedParams?.slug;
   const category = resolvedSearchParams?.category;
-  if (!slug) notFound();
+  if (!rawSlug) notFound();
 
+  // Redirection 308 permanente si le slug comporte des majuscules
+  const lowerSlug = rawSlug.toLowerCase();
+  if (rawSlug !== lowerSlug) {
+    const searchString = category ? `?category=${encodeURIComponent(category)}` : "";
+    permanentRedirect(`/${lowerSlug}${searchString}`);
+  }
+
+  const slug = lowerSlug;
   const supabase = getAdminClient();
 
   // Load store
   const { data: rawStore } = await supabase
     .from("stores")
     .select("*")
-    .eq("slug", slug)
+    .ilike("slug", slug)
     .maybeSingle();
 
   const store = rawStore as unknown as (DbStore & { type?: string }) | null;
