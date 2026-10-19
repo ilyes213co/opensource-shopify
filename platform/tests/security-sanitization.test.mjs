@@ -6,6 +6,7 @@
 
 import assert from "node:assert";
 import { safeJsonLd } from "../lib/json-ld.ts";
+import { sanitizePublicStoreSettings } from "../lib/utils.ts";
 
 console.log("Running security and sanitization test suite...");
 
@@ -122,5 +123,54 @@ assert.strictEqual(
   "Erreur : configuration security légitime a été perdue !"
 );
 console.log("✓ Test 3 passé : custom_domain et clés arbitraires purgés de settings.");
+
+// ── Test 4 : Whitelist stricte de sanitizePublicStoreSettings pour les props publiques ──
+// Un objet settings contenant carrier, notifications, security et une clé inconnue ne doit rien laisser passer dans les props
+const sensitiveSettings = {
+  carrier: {
+    provider: "yalidine",
+    api_id: "YAL-SECRET-123",
+    api_token: "sec_token_9999",
+  },
+  notifications: {
+    email_alerts: true,
+    telegram_chat_id: "123456789",
+  },
+  security: {
+    strict_dz_phone: true,
+    anti_spam_orders: true,
+    blacklist: ["0555123456", "0770987654"],
+  },
+  unknown_custom_key: "malicious_payload",
+  another_secret: 42,
+};
+
+const publicProps = sanitizePublicStoreSettings(sensitiveSettings);
+
+assert.deepStrictEqual(
+  publicProps,
+  {},
+  "Erreur : un objet settings contenant carrier, notifications, security et une clé inconnue doit retourner un objet vide !"
+);
+assert.strictEqual("carrier" in publicProps, false);
+assert.strictEqual("notifications" in publicProps, false);
+assert.strictEqual("security" in publicProps, false);
+assert.strictEqual("unknown_custom_key" in publicProps, false);
+
+// Vérifier que seules les clés de la whitelist passent si elles sont présentes
+const mixedSettings = {
+  ...sensitiveSettings,
+  instagram_url: "https://instagram.com/shop",
+  facebook_page_url: "https://facebook.com/shop",
+  payment_methods: ["cod", "baridimob"],
+};
+
+const mixedPublic = sanitizePublicStoreSettings(mixedSettings);
+assert.deepStrictEqual(mixedPublic, {
+  instagram_url: "https://instagram.com/shop",
+  facebook_page_url: "https://facebook.com/shop",
+  payment_methods: ["cod", "baridimob"],
+});
+console.log("✓ Test 4 passé : sanitizePublicStoreSettings bloque carrier, notifications, security et clés inconnues.");
 
 console.log("All security and sanitization tests passed successfully!");

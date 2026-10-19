@@ -88,6 +88,56 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+const PUBLIC_STORE_COLUMNS = [
+  "id",
+  "name",
+  "slug",
+  "description",
+  "logo_url",
+  "cover_url",
+  "slogan",
+  "whatsapp_phone",
+  "primary_color",
+  "font_family",
+  "theme",
+  "animation_style",
+  "special_effects",
+  "category",
+  "currency",
+  "city",
+  "country",
+  "status",
+  "type",
+  "seo_title",
+  "seo_description",
+  "seo_metadata",
+  "facebook_pixel_id",
+  "tiktok_pixel_id",
+  "google_analytics_id",
+  "content_overrides",
+  "settings",
+].join(", ");
+
+const PUBLIC_PRODUCT_COLUMNS = [
+  "id",
+  "store_id",
+  "name",
+  "slug",
+  "description",
+  "price",
+  "compare_price",
+  "original_price",
+  "stock",
+  "stock_quantity",
+  "images",
+  "options",
+  "category",
+  "is_featured",
+  "position",
+  "status",
+  "created_at",
+].join(", ");
+
 export default async function ProductDetailsPage({ params }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug;
@@ -96,10 +146,10 @@ export default async function ProductDetailsPage({ params }: PageProps) {
 
   const supabase = getAdminClient();
 
-  // 1. Charger la boutique
+  // 1. Charger la boutique avec les colonnes publiques autorisées
   const { data: storeData } = await supabase
     .from("stores")
-    .select("*")
+    .select(PUBLIC_STORE_COLUMNS)
     .eq("slug", slug)
     .maybeSingle();
 
@@ -111,7 +161,7 @@ export default async function ProductDetailsPage({ params }: PageProps) {
 
   let productQuery = supabase
     .from("products")
-    .select("*")
+    .select(PUBLIC_PRODUCT_COLUMNS)
     .eq("store_id", storeRaw.id);
 
   if (isUuid) {
@@ -125,7 +175,7 @@ export default async function ProductDetailsPage({ params }: PageProps) {
   if (!productData && isUuid) {
     const { data: fallback } = await supabase
       .from("products")
-      .select("*")
+      .select(PUBLIC_PRODUCT_COLUMNS)
       .eq("store_id", storeRaw.id)
       .eq("slug", productSlug)
       .maybeSingle();
@@ -140,7 +190,7 @@ export default async function ProductDetailsPage({ params }: PageProps) {
   try {
     const { data: dbWilayas } = await supabase
       .from("wilayas")
-      .select("*")
+      .select("id, name, price_home, price_desk, eta")
       .order("id");
     if (dbWilayas && dbWilayas.length > 0) {
       wilayas = dbWilayas as Wilaya[];

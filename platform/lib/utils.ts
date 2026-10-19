@@ -190,18 +190,77 @@ export function safeString(val: any, fallback = ""): string {
 }
 
 /**
- * Strips private operational secrets from store.settings (carrier credentials, telegram keys,
- * security blacklists, etc.) so they are never leaked to public clients or serialized into HTML.
+ * Whitelists ONLY safe, display-related settings from store.settings.
+ * Any unknown or operational keys (carrier, notifications, security, etc.) are strictly stripped
+ * so they are never leaked to public clients or serialized into HTML.
  */
 export function sanitizePublicStoreSettings(settings: any): Record<string, any> {
-  if (!settings || typeof settings !== "object") return {};
-  const { carrier, notifications, ...rest } = settings;
-  const sanitizedSecurity = rest.security ? { ...rest.security } : undefined;
-  if (sanitizedSecurity) {
-    delete sanitizedSecurity.blacklist;
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    return {};
   }
-  return {
-    ...rest,
-    ...(sanitizedSecurity ? { security: sanitizedSecurity } : {}),
-  };
+
+  const result: Record<string, any> = {};
+
+  // 1. Social links
+  if (typeof settings.instagram_url === "string" && settings.instagram_url.trim()) {
+    result.instagram_url = settings.instagram_url.trim();
+  }
+  if (typeof settings.facebook_page_url === "string" && settings.facebook_page_url.trim()) {
+    result.facebook_page_url = settings.facebook_page_url.trim();
+  }
+
+  // 2. Displayed payment methods
+  if (Array.isArray(settings.payment_methods)) {
+    result.payment_methods = settings.payment_methods.filter((m: any) => typeof m === "string");
+  } else if (settings.payment_methods && typeof settings.payment_methods === "object") {
+    result.payment_methods = settings.payment_methods;
+  }
+
+  // 3. Manual shipping config (used by OrderForm & public delivery calculators)
+  if (
+    settings.manual_shipping &&
+    typeof settings.manual_shipping === "object" &&
+    !Array.isArray(settings.manual_shipping)
+  ) {
+    result.manual_shipping = {
+      price_home:
+        typeof settings.manual_shipping.price_home === "number"
+          ? settings.manual_shipping.price_home
+          : undefined,
+      price_desk:
+        typeof settings.manual_shipping.price_desk === "number"
+          ? settings.manual_shipping.price_desk
+          : undefined,
+      is_free: Boolean(settings.manual_shipping.is_free),
+      custom_wilayas:
+        settings.manual_shipping.custom_wilayas &&
+        typeof settings.manual_shipping.custom_wilayas === "object"
+          ? settings.manual_shipping.custom_wilayas
+          : undefined,
+    };
+  }
+
+  // 4. Shipping slip public sender note / customer service info
+  if (
+    settings.shipping_slip &&
+    typeof settings.shipping_slip === "object" &&
+    !Array.isArray(settings.shipping_slip)
+  ) {
+    result.shipping_slip = {
+      sender_name:
+        typeof settings.shipping_slip.sender_name === "string"
+          ? settings.shipping_slip.sender_name.trim()
+          : undefined,
+      customer_service_phone:
+        typeof settings.shipping_slip.customer_service_phone === "string"
+          ? settings.shipping_slip.customer_service_phone.trim()
+          : undefined,
+      footer_note:
+        typeof settings.shipping_slip.footer_note === "string"
+          ? settings.shipping_slip.footer_note.trim()
+          : undefined,
+    };
+  }
+
+  return result;
 }

@@ -20,6 +20,56 @@ interface PageProps {
   searchParams: Promise<{ category?: string }> | { category?: string };
 }
 
+const PUBLIC_STORE_COLUMNS = [
+  "id",
+  "name",
+  "slug",
+  "description",
+  "logo_url",
+  "cover_url",
+  "slogan",
+  "whatsapp_phone",
+  "primary_color",
+  "font_family",
+  "theme",
+  "animation_style",
+  "special_effects",
+  "category",
+  "currency",
+  "city",
+  "country",
+  "status",
+  "type",
+  "seo_title",
+  "seo_description",
+  "seo_metadata",
+  "facebook_pixel_id",
+  "tiktok_pixel_id",
+  "google_analytics_id",
+  "content_overrides",
+  "settings",
+].join(", ");
+
+const PUBLIC_PRODUCT_COLUMNS = [
+  "id",
+  "store_id",
+  "name",
+  "slug",
+  "description",
+  "price",
+  "compare_price",
+  "original_price",
+  "stock",
+  "stock_quantity",
+  "images",
+  "options",
+  "category",
+  "is_featured",
+  "position",
+  "status",
+  "created_at",
+].join(", ");
+
 export default async function StoreOrFunnelPage({ params, searchParams }: PageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
@@ -37,10 +87,10 @@ export default async function StoreOrFunnelPage({ params, searchParams }: PagePr
   const slug = lowerSlug;
   const supabase = getAdminClient();
 
-  // Load store
+  // Load store with explicit public columns
   const { data: rawStore } = await supabase
     .from("stores")
-    .select("*")
+    .select(PUBLIC_STORE_COLUMNS)
     .ilike("slug", slug)
     .maybeSingle();
 
@@ -52,10 +102,10 @@ export default async function StoreOrFunnelPage({ params, searchParams }: PagePr
     store.type === "funnel" ||
     (store as any).seo_metadata?.type === "funnel";
 
-  // Load products
+  // Load products with explicit public columns
   let query = supabase
     .from("products")
-    .select("*")
+    .select(PUBLIC_PRODUCT_COLUMNS)
     .eq("store_id", store.id)
     .in("status", ["active", "published"])
     .order("position", { ascending: true })
