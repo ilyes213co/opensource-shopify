@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, CheckCircle2, Plus, Minus } from "lucide-react";
+import { ArrowRight, ChevronDown, Plus, Minus } from "lucide-react";
 import EasyTradeLogo from "@/components/brand/EasyTradeLogo";
 import ThreeAmbientScene from "@/components/brand/ThreeAmbientScene";
 
@@ -174,12 +174,6 @@ export default function LandingClient() {
             </span>
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-base sm:text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed font-normal">
-            EasyTradez est l&apos;infrastructure e-commerce tout-en-un pensée pour le marché algérien :
-            paiement à la livraison (COD), intégration Yalidine & ZR Express, et boutique ultra-rapide sur mobile.
-          </p>
-
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
@@ -209,22 +203,6 @@ export default function LandingClient() {
               <span>Explorer la plateforme</span>
               <ChevronDown className="w-4 h-4 text-white/70" />
             </a>
-          </div>
-
-          {/* Trust badges */}
-          <div className="pt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-white/60">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#60a5fa]" />
-              <span>Zéro carte bancaire requise</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#60a5fa]" />
-              <span>Prêt pour Yalidine & ZR Express</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#60a5fa]" />
-              <span>Comptabilité directe en DZD</span>
-            </div>
           </div>
         </div>
       </section>

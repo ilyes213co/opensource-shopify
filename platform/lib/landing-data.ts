@@ -27,7 +27,7 @@ export const FEATURES = [
   {
     num: "03",
     title: "Livraison Intégrée",
-    body: "Connectez Yalidine, Zr Express, Procolis et d'autres transporteurs en un clic. Génération automatique de bordereaux et tracking précis.",
+    body: "Bordereaux de livraison imprimables avec le montant à encaisser.",
     tag: "58 Wilayas",
   },
   {
