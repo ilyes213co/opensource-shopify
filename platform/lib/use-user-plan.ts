@@ -16,6 +16,7 @@ export interface UserPlanData {
   canUseCustomDomain: boolean;
   canUseBulkShipping: boolean;
   canUseAllThemes: boolean;
+  canCompareFunnels: boolean;
   expiresAt: string | null;
   daysRemaining: number | null;
   isLoading: boolean;
@@ -35,6 +36,7 @@ const DEFAULT_PLAN: UserPlanData = {
   canUseCustomDomain: false,
   canUseBulkShipping: false,
   canUseAllThemes: false,
+  canCompareFunnels: false,
   expiresAt: null,
   daysRemaining: null,
   isLoading: false,
@@ -85,6 +87,7 @@ export function useUserPlan(): UserPlanData {
     canUseCustomDomain: Boolean(data.can_use_custom_domain ?? isPro),
     canUseBulkShipping: Boolean(data.can_use_bulk_shipping ?? isPro),
     canUseAllThemes: Boolean(data.can_use_all_themes ?? isPro),
+    canCompareFunnels: Boolean(data.can_compare_funnels ?? isPro),
     expiresAt: data.expires_at || null,
     daysRemaining: data.days_remaining ?? null,
     isLoading: false,

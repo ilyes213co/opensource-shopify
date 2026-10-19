@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
       can_use_custom_domain: planLimits.canUseCustomDomain,
       can_use_bulk_shipping: planLimits.canUseBulkShipping,
       can_use_all_themes: planLimits.canUseAllThemes,
+      can_compare_funnels: planLimits.canCompareFunnels,
     });
   } catch (err: any) {
     if (err?.digest === "DYNAMIC_SERVER_USAGE" || err?.message?.includes("Dynamic server usage")) {

@@ -21,6 +21,7 @@ import {
   Truck,
   CreditCard,
   Headset,
+  Swords,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -107,7 +108,11 @@ export default function SidebarNav({ onNavigate }: SidebarNavProps = {}) {
     if (pathname.startsWith("/dashboard/boutique") || sectionParam === "boutique") {
       return "boutiques";
     }
-    if (pathname.startsWith("/dashboard/funnel") || sectionParam === "funnel") {
+    if (
+      pathname.startsWith("/dashboard/funnel") ||
+      pathname.startsWith("/dashboard/funnels-battle") ||
+      sectionParam === "funnel"
+    ) {
       return "funnels";
     }
     if (typeof window !== "undefined") {
@@ -123,7 +128,10 @@ export default function SidebarNav({ onNavigate }: SidebarNavProps = {}) {
     if (pathname.startsWith("/dashboard/boutique")) {
       setActiveTab("boutiques");
       if (typeof window !== "undefined") localStorage.setItem("active_section", "boutiques");
-    } else if (pathname.startsWith("/dashboard/funnel")) {
+    } else if (
+      pathname.startsWith("/dashboard/funnel") ||
+      pathname.startsWith("/dashboard/funnels-battle")
+    ) {
       setActiveTab("funnels");
       if (typeof window !== "undefined") localStorage.setItem("active_section", "funnels");
     } else if (sectionParam === "boutique") {
@@ -176,7 +184,22 @@ export default function SidebarNav({ onNavigate }: SidebarNavProps = {}) {
     }
   };
 
-  const navItems = activeTab === "funnels" ? FUNNEL_ITEMS : BOUTIQUE_ITEMS;
+  const funnelItems: NavItemConfig[] = [
+    { label: "Accueil",      href: "/dashboard?section=funnel",  icon: Home, exact: true },
+    { label: "Commandes",    href: "/dashboard/funnel/orders",   icon: Package },
+    { label: "Produits",     href: "/dashboard/funnel/products", icon: Tag },
+    { label: "Call Center",  href: "/dashboard/team",            icon: Headset },
+    { label: "Funnels",      href: "/dashboard/funnel",          icon: Layers, exact: true },
+    {
+      label: "Funnels Battle",
+      href: "/dashboard/funnels-battle",
+      icon: Swords,
+      badge: userPlan.isFree ? "Pro" : undefined,
+    },
+    { label: "Analytiques",  href: "/dashboard/analytics?section=funnel", icon: BarChart2 },
+  ];
+
+  const navItems = activeTab === "funnels" ? funnelItems : BOUTIQUE_ITEMS;
 
   const displayName =
     user?.user_metadata?.full_name ||

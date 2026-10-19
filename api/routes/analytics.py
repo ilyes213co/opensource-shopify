@@ -62,6 +62,336 @@ async def verify_store_owner(store_id: str, user_id: str, sb) -> None:
         raise HTTPException(403, "Accès refusé")
 
 
+# ─── Fuseau horaire Algérie & dates ───────────────────────────────────────────
+ALGIERS_TZ = timezone(timedelta(hours=1))
+
+
+def _to_algiers_day(created_at_val: str) -> str:
+    """Convertit un timestamp ISO Supabase en date calendrier YYYY-MM-DD (fuseau Algérie UTC+1)."""
+    try:
+        clean = str(created_at_val).strip().replace("Z", "+00:00")
+        dt = datetime.fromisoformat(clean)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(ALGIERS_TZ).strftime("%Y-%m-%d")
+    except Exception:
+        return str(created_at_val)[:10]
+
+
+def _format_amount(val: float) -> str:
+    """Formate un montant en chaîne lisible, ex: 12 500 ou 12.5k."""
+    if val >= 1_000_000:
+        return f"{val / 1_000_000:.1f}M".replace(".0M", "M")
+    if val >= 10_000:
+        return f"{int(round(val)):,}".replace(",", " ")
+    return f"{int(round(val))}"
+
+
+# ─── GET /analytics/compare (Funnels Battle) ──────────────────────────────────
+
+@router.get("/compare")
+async def compare_funnels(
+    period: str = Query("7d"),
+    from_date: str | None = Query(None, alias="from"),
+    to_date: str | None = Query(None, alias="to"),
+    store_ids: str | None = Query(None),
+    user=Depends(get_current_user),
+    sb=Depends(get_supabase_client),
+):
+    """
+    Comparateur multi-funnels (Funnels Battle) :
+    - Restreint aux comptes Pro et Business (403 PlanLimitException sinon).
+    - Maximum 5 funnels appartenant au marchand.
+    - Filtre strictement sur type='funnel' et exclut brouillons et suspendus.
+    - Le calcul du CA est STRICTEMENT basé sur les commandes livrées (status = 'delivered').
+    - IMPORTANT : Le filtrage temporel s'applique strictement sur orders.created_at
+      (date de création de la commande), et non sur les dates de mise à jour de statut.
+    """
+    from plan_guard import check_can_compare_funnels
+
+    # 1. Garde de plan : vérifie que l'utilisateur a un plan actif Pro ou Business (refus par défaut, 403)
+    check_can_compare_funnels(user.id, sb)
+
+    # 2. Récupère tous les funnels éligibles du marchand (sans révéler les funnels des tiers)
+    stores_res = (
+        sb.table("stores")
+        .select("id, name, slug, status, type, primary_color, created_at")
+        .eq("owner_id", user.id)
+        .eq("type", "funnel")
+        .neq("status", "draft")
+        .neq("status", "suspended")
+        .order("created_at", desc=False)
+        .execute()
+    )
+    all_funnels: list[dict] = stores_res.data or []
+
+    # Map par id pour validation d'appartenance stricte
+    funnels_by_id = {f["id"]: f for f in all_funnels}
+
+    # 3. Sélection des funnels à comparer (max 5)
+    selected_funnels: list[dict] = []
+    if store_ids:
+        raw_ids = [s.strip() for s in store_ids.split(",") if s.strip()]
+        seen = set()
+        for sid in raw_ids:
+            if sid in funnels_by_id and sid not in seen:
+                seen.add(sid)
+                selected_funnels.append(funnels_by_id[sid])
+            if len(selected_funnels) >= 5:
+                break
+    else:
+        # Par défaut, jusqu'à 5 funnels actifs du marchand
+        selected_funnels = all_funnels[:5]
+
+    # 4. Calcul de la plage de dates (fuseau horaire Algérie UTC+1)
+    now_algiers = datetime.now(ALGIERS_TZ)
+    if from_date and to_date:
+        try:
+            start_dt = datetime.strptime(from_date[:10], "%Y-%m-%d").replace(
+                hour=0, minute=0, second=0, microsecond=0, tzinfo=ALGIERS_TZ
+            )
+            end_dt = datetime.strptime(to_date[:10], "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, microsecond=999999, tzinfo=ALGIERS_TZ
+            )
+            period_label = "custom"
+        except Exception:
+            start_dt = (now_algiers - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now_algiers
+            period_label = "7d"
+    else:
+        days = PERIOD_DAYS.get(period, 7)
+        period_label = period
+        if period == "today":
+            start_dt = now_algiers.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now_algiers
+        else:
+            start_dt = (now_algiers - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now_algiers
+
+    start_utc_iso = start_dt.astimezone(timezone.utc).isoformat()
+    end_utc_iso = end_dt.astimezone(timezone.utc).isoformat()
+
+    available_list = [
+        {"id": f["id"], "name": f["name"], "slug": f["slug"], "status": f["status"]}
+        for f in all_funnels
+    ]
+
+    # État vide : marchand avec moins de 2 funnels éligibles
+    if len(all_funnels) < 2 or len(selected_funnels) < 2:
+        return {
+            "has_enough_funnels": False,
+            "total_available_funnels": len(all_funnels),
+            "available_funnels": available_list,
+            "selected_funnel_ids": [f["id"] for f in selected_funnels],
+            "funnels": [],
+            "winner": None,
+            "has_winner": False,
+            "synthesis": "Sélectionnez au moins 2 funnels pour lancer la battle.",
+            "daily_series": [],
+            "period": {
+                "key": period_label,
+                "from": start_dt.strftime("%Y-%m-%d"),
+                "to": end_dt.strftime("%Y-%m-%d"),
+            },
+        }
+
+    target_ids = [f["id"] for f in selected_funnels]
+
+    # 5. Deux requêtes groupées sans N+1
+    events_res = (
+        sb.table("store_analytics")
+        .select("store_id, event_type, created_at")
+        .in_("store_id", target_ids)
+        .gte("created_at", start_utc_iso)
+        .lte("created_at", end_utc_iso)
+        .limit(20000)
+        .execute()
+    )
+    events: list[dict] = events_res.data or []
+
+    # IMPORTANT : Le filtrage de période s'applique strictement sur orders.created_at (date de commande),
+    # et non sur une éventuelle date de mise à jour du statut.
+    orders_res = (
+        sb.table("orders")
+        .select("id, store_id, total_amount, status, created_at")
+        .in_("store_id", target_ids)
+        .gte("created_at", start_utc_iso)
+        .lte("created_at", end_utc_iso)
+        .limit(10000)
+        .execute()
+    )
+    orders: list[dict] = orders_res.data or []
+
+    # 6. Agrégation par funnel
+    cancelled_statuses = {"cancelled", "canceled", "annule", "annulée"}
+    funnel_metrics: list[dict] = []
+
+    for f in selected_funnels:
+        fid = f["id"]
+        f_events = [e for e in events if e.get("store_id") == fid]
+        f_orders = [o for o in orders if o.get("store_id") == fid]
+
+        views = sum(1 for e in f_events if e.get("event_type") == "view")
+        wa_clicks = sum(1 for e in f_events if e.get("event_type") == "whatsapp_click")
+
+        # Commandes non annulées
+        non_cancelled = [
+            o for o in f_orders
+            if str(o.get("status") or "").lower() not in cancelled_statuses
+        ]
+        orders_count = len(non_cancelled)
+
+        # Commandes livrées (seul critère de CA pris en compte pour le classement)
+        delivered_orders = [
+            o for o in f_orders
+            if str(o.get("status") or "").lower() == "delivered"
+        ]
+        delivered_orders_count = len(delivered_orders)
+        delivered_revenue = sum(float(o.get("total_amount") or 0.0) for o in delivered_orders)
+
+        # Commandes en attente (confirmées + expédiées, grisées, exclues du classement)
+        pending_orders = [
+            o for o in f_orders
+            if str(o.get("status") or "").lower() in ("confirmed", "shipped")
+        ]
+        pending_orders_count = len(pending_orders)
+        pending_revenue = sum(float(o.get("total_amount") or 0.0) for o in pending_orders)
+
+        # Ratios
+        order_rate = round((orders_count / views) * 100, 1) if views > 0 else 0.0
+        conversion_rate = round((wa_clicks / views) * 100, 1) if views > 0 else 0.0
+        revenue_per_visit = round(delivered_revenue / views, 2) if views > 0 else 0.0
+        aov = round(delivered_revenue / delivered_orders_count, 2) if delivered_orders_count > 0 else 0.0
+
+        funnel_metrics.append({
+            "id": fid,
+            "name": f["name"],
+            "slug": f["slug"],
+            "primary_color": f.get("primary_color") or "#2540EA",
+            "views": views,
+            "whatsapp_clicks": wa_clicks,
+            "orders_count": orders_count,
+            "delivered_orders_count": delivered_orders_count,
+            "delivered_revenue": delivered_revenue,
+            "pending_revenue": pending_revenue,
+            "pending_orders_count": pending_orders_count,
+            "order_rate": order_rate,
+            "conversion_rate": conversion_rate,
+            "revenue_per_visit": revenue_per_visit,
+            "aov": aov,
+            "is_low_sample": views < 30,
+            "is_winner": False,
+            "is_most_efficient": False,
+            "rank": 1,
+        })
+
+    # 7. Tri par CA livré décroissant et gestion des ex æquo
+    funnel_metrics.sort(key=lambda m: m["delivered_revenue"], reverse=True)
+
+    current_rank = 1
+    for i, m in enumerate(funnel_metrics):
+        if i > 0 and m["delivered_revenue"] < funnel_metrics[i - 1]["delivered_revenue"]:
+            current_rank = i + 1
+        m["rank"] = current_rank
+
+    # 8. Vainqueur et efficacité
+    has_delivered_revenue = any(m["delivered_revenue"] > 0 for m in funnel_metrics)
+    has_winner = False
+    winner = None
+
+    if has_delivered_revenue:
+        has_winner = True
+        top_rev = funnel_metrics[0]["delivered_revenue"]
+        for m in funnel_metrics:
+            if m["delivered_revenue"] == top_rev:
+                m["is_winner"] = True
+        winner = funnel_metrics[0]
+
+    # Badge 'Plus efficace' (uniquement si au moins 30 visites pour éviter les faux positifs)
+    eligible_efficiency = [m for m in funnel_metrics if not m["is_low_sample"]]
+    if eligible_efficiency:
+        best_efficient = max(eligible_efficiency, key=lambda m: m["conversion_rate"])
+        if best_efficient["conversion_rate"] > 0:
+            best_efficient["is_most_efficient"] = True
+
+    # 9. Phrase de synthèse protégée
+    first = funnel_metrics[0]
+    second = funnel_metrics[1] if len(funnel_metrics) > 1 else None
+
+    if not has_delivered_revenue:
+        synthesis = "Aucun vainqueur sur cette période : aucune commande livrée n'a été enregistrée pour les funnels sélectionnés."
+    elif second and second["delivered_revenue"] == 0:
+        # Protégé contre division par zéro
+        synthesis = (
+            f"« {first['name']} » est en tête avec {_format_amount(first['delivered_revenue'])} DZD livrés. "
+            "C'est le seul funnel à avoir généré du CA livré sur cette période."
+        )
+    elif second and first["delivered_revenue"] == second["delivered_revenue"]:
+        synthesis = (
+            f"Égalité parfaite en tête entre « {first['name']} » et « {second['name']} » avec "
+            f"{_format_amount(first['delivered_revenue'])} DZD livrés chacun !"
+        )
+    elif second and second["delivered_revenue"] > 0:
+        diff = first["delivered_revenue"] - second["delivered_revenue"]
+        pct = round((diff / second["delivered_revenue"]) * 100, 1)
+        synthesis = (
+            f"« {first['name']} » domine la battle avec {_format_amount(first['delivered_revenue'])} DZD de CA livré "
+            f"(+{pct}% par rapport à « {second['name']} »)."
+        )
+    else:
+        synthesis = f"« {first['name']} » est en tête avec {_format_amount(first['delivered_revenue'])} DZD livrés."
+
+    # 10. Série chronologique journalière pour le graphique Recharts
+    views_by_day_store: dict[tuple[str, str], int] = {}
+    rev_by_day_store: dict[tuple[str, str], float] = {}
+
+    for e in events:
+        if e.get("event_type") == "view" and e.get("created_at"):
+            d = _to_algiers_day(e["created_at"])
+            k = (d, e["store_id"])
+            views_by_day_store[k] = views_by_day_store.get(k, 0) + 1
+
+    for o in orders:
+        if str(o.get("status") or "").lower() == "delivered" and o.get("created_at"):
+            d = _to_algiers_day(o["created_at"])
+            k = (d, o["store_id"])
+            amt = float(o.get("total_amount") or 0.0)
+            rev_by_day_store[k] = rev_by_day_store.get(k, 0.0) + amt
+
+    daily_series: list[dict] = []
+    curr = start_dt
+    while curr.date() <= end_dt.date():
+        day_str = curr.strftime("%Y-%m-%d")
+        label = curr.strftime("%d/%m")
+        point: dict = {
+            "date": label,
+            "full_date": day_str,
+        }
+        for f in selected_funnels:
+            fid = f["id"]
+            point[f"views_{fid}"] = views_by_day_store.get((day_str, fid), 0)
+            point[f"revenue_{fid}"] = rev_by_day_store.get((day_str, fid), 0.0)
+        daily_series.append(point)
+        curr += timedelta(days=1)
+
+    return {
+        "has_enough_funnels": True,
+        "total_available_funnels": len(all_funnels),
+        "available_funnels": available_list,
+        "selected_funnel_ids": target_ids,
+        "funnels": funnel_metrics,
+        "winner": winner,
+        "has_winner": has_winner,
+        "synthesis": synthesis,
+        "daily_series": daily_series,
+        "period": {
+            "key": period_label,
+            "from": start_dt.strftime("%Y-%m-%d"),
+            "to": end_dt.strftime("%Y-%m-%d"),
+        },
+    }
+
+
 # ─── GET /analytics/{store_id} ────────────────────────────────────────────────
 
 @router.get("/{store_id}")

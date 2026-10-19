@@ -89,6 +89,7 @@ class PlanLimits:
     can_use_ai_unlimited: bool  # pro & business (free = 1 essai)
     can_use_bulk_shipping: bool # pro & business (free = wilaya par wilaya uniquement)
     can_use_all_themes: bool    # pro & business (free = FREE_THEMES uniquement)
+    can_compare_funnels: bool   # pro & business (Funnels Battle)
 
 
 PLAN_CONFIGS: Dict[str, PlanLimits] = {
@@ -102,6 +103,7 @@ PLAN_CONFIGS: Dict[str, PlanLimits] = {
         can_use_ai_unlimited=False,
         can_use_bulk_shipping=False,
         can_use_all_themes=False,
+        can_compare_funnels=False,
     ),
     "pro": PlanLimits(
         plan="pro",
@@ -113,6 +115,7 @@ PLAN_CONFIGS: Dict[str, PlanLimits] = {
         can_use_ai_unlimited=True,
         can_use_bulk_shipping=True,
         can_use_all_themes=True,
+        can_compare_funnels=True,
     ),
     "business": PlanLimits(
         plan="business",
@@ -124,6 +127,7 @@ PLAN_CONFIGS: Dict[str, PlanLimits] = {
         can_use_ai_unlimited=True,
         can_use_bulk_shipping=True,
         can_use_all_themes=True,
+        can_compare_funnels=True,
     ),
 }
 
@@ -414,6 +418,33 @@ def check_team_management_allowed(
                 "exclusive au forfait Business. Passez au Pack Business pour inviter votre équipe !"
             ),
             limit_type="team",
+            current=0,
+            limit=0,
+        )
+
+    return plan_limits
+
+
+def check_can_compare_funnels(
+    user_id: str,
+    supabase=None,
+) -> PlanLimits:
+    """
+    Vérifie le droit d'accéder au comparateur Funnels Battle :
+    - Autorisé uniquement pour les forfaits Pro et Business actifs.
+    - Gratuit (ou plan expiré) : PlanLimitException(limit_type="funnels_battle").
+    """
+    if supabase is None:
+        supabase = get_supabase()
+
+    plan_limits = get_user_plan(user_id, supabase)
+    if not plan_limits.can_compare_funnels:
+        raise PlanLimitException(
+            message=(
+                "Funnels Battle est une fonctionnalité exclusive aux forfaits Pro et Business. "
+                "Passez au Pack Pro pour comparer la rentabilité de vos funnels et identifier le plus performant !"
+            ),
+            limit_type="funnels_battle",
             current=0,
             limit=0,
         )

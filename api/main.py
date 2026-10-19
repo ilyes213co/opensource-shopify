@@ -121,6 +121,7 @@ except Exception as e:
 try:
     from routes.analytics import router as analytics_router
     app.include_router(analytics_router)
+    app.include_router(analytics_router, prefix="/api")
 except Exception as e:
     logger.warning(f"analytics router not loaded: {e}")
 

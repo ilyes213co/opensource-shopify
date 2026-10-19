@@ -112,6 +112,12 @@ export const uploadApi = {
 export const analyticsApi = {
   get: (storeId: string, period: "today" | "7d" | "30d" | "3m") =>
     api.get(`/api/analytics/${storeId}`, { params: { period } }).then(r => r.data),
+  compare: (params: {
+    period?: string;
+    from?: string;
+    to?: string;
+    store_ids?: string;
+  }) => api.get("/api/analytics/compare", { params }).then(r => r.data),
 };
 
 export const deployApi = {

@@ -18,6 +18,7 @@ export interface PlanLimits {
   canUseAiUnlimited: boolean; // pro & business
   canUseBulkShipping: boolean; // pro & business
   canUseAllThemes: boolean; // pro & business
+  canCompareFunnels: boolean; // pro & business
 }
 
 export const PLAN_CONFIGS: Record<string, PlanLimits> = {
@@ -32,6 +33,7 @@ export const PLAN_CONFIGS: Record<string, PlanLimits> = {
     canUseAiUnlimited: false,
     canUseBulkShipping: false,
     canUseAllThemes: false,
+    canCompareFunnels: false,
   },
   pro: {
     plan: "pro",
@@ -44,6 +46,7 @@ export const PLAN_CONFIGS: Record<string, PlanLimits> = {
     canUseAiUnlimited: true,
     canUseBulkShipping: true,
     canUseAllThemes: true,
+    canCompareFunnels: true,
   },
   business: {
     plan: "business",
@@ -56,6 +59,7 @@ export const PLAN_CONFIGS: Record<string, PlanLimits> = {
     canUseAiUnlimited: true,
     canUseBulkShipping: true,
     canUseAllThemes: true,
+    canCompareFunnels: true,
   },
 };
 

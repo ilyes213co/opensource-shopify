@@ -19,7 +19,7 @@ interface UpgradeModalProps {
   description?: string;
   currentPlan?: string;
   recommendedPlan?: "pro" | "business";
-  limitType?: "stores" | "products" | "team" | "domain" | "ai" | "theme" | "shipping" | "pixels" | "carrier";
+  limitType?: "stores" | "products" | "team" | "domain" | "ai" | "theme" | "shipping" | "pixels" | "carrier" | "funnels_battle";
 }
 
 export default function UpgradeModal({
@@ -50,6 +50,8 @@ export default function UpgradeModal({
       ? "Le multi-tracking publicitaire (TikTok Pixel & Google Analytics) est réservé aux forfaits Pro et Business. Débloquez tous vos pixels avec le Pack Pro !"
       : limitType === "carrier"
       ? "L'intégration directe avec les transporteurs algériens (Yalidine, ZR Express, Maystro) est réservée aux forfaits Pro et Business."
+      : limitType === "funnels_battle"
+      ? "Funnels Battle est réservé aux forfaits Pro et Business. Comparez la rentabilité de vos funnels et identifiez celui qui vend le plus avec le Pack Pro !"
       : "Cette fonctionnalité avancée est disponible sur nos plans supérieurs.";
 
   const isBusinessTarget = recommendedPlan === "business";
