@@ -84,22 +84,129 @@ export async function PATCH(
       }
     }
 
-    // Protection plan pour domaine personnalisé
-    if (filteredBody.custom_domain && typeof filteredBody.custom_domain === "string" && filteredBody.custom_domain.trim()) {
-      const { getUserPlan } = await import("@/lib/plan-limits-server");
-      const userPlan = await getUserPlan(user.id, admin);
-      if (!userPlan.canUseCustomDomain) {
-        return NextResponse.json(
-          {
-            detail: "PLAN_LIMIT_REACHED",
-            code: "PLAN_LIMIT_REACHED",
-            message:
-              "La connexion d'un nom de domaine personnalisé (.com, .dz) est réservée aux forfaits Pro et Business. Passez au Pack Pro pour connecter votre propre domaine !",
-            limit_type: "domain",
-          },
-          { status: 403 }
-        );
+    // Validation stricte et unicité de custom_domain
+    if (filteredBody.custom_domain !== undefined) {
+      if (typeof filteredBody.custom_domain === "string" && filteredBody.custom_domain.trim()) {
+        const cleanDomain = filteredBody.custom_domain
+          .trim()
+          .toLowerCase()
+          .replace(/^https?:\/\//, "")
+          .replace(/\/+$/, "");
+
+        const domainRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
+        if (!domainRegex.test(cleanDomain) || cleanDomain.length > 253) {
+          return NextResponse.json(
+            { detail: "Nom de domaine invalide. Utilisez un format tel que 'maboutique.com' ou 'shop.dz'." },
+            { status: 400 }
+          );
+        }
+
+        if (
+          cleanDomain === "easytradez.site" ||
+          cleanDomain.endsWith(".easytradez.site") ||
+          cleanDomain === "vercel.app" ||
+          cleanDomain.endsWith(".vercel.app") ||
+          cleanDomain === "localhost"
+        ) {
+          return NextResponse.json(
+            { detail: "Ce nom de domaine est réservé par la plateforme EasyTrade." },
+            { status: 400 }
+          );
+        }
+
+        // Protection plan pour domaine personnalisé
+        const { getUserPlan } = await import("@/lib/plan-limits-server");
+        const userPlan = await getUserPlan(user.id, admin);
+        if (!userPlan.canUseCustomDomain) {
+          return NextResponse.json(
+            {
+              detail: "PLAN_LIMIT_REACHED",
+              code: "PLAN_LIMIT_REACHED",
+              message:
+                "La connexion d'un nom de domaine personnalisé (.com, .dz) est réservée aux forfaits Pro et Business. Passez au Pack Pro pour connecter votre propre domaine !",
+              limit_type: "domain",
+            },
+            { status: 403 }
+          );
+        }
+
+        // Vérification de l'unicité en base de données
+        const { data: existingDomainStore } = await admin
+          .from("stores")
+          .select("id")
+          .neq("id", id)
+          .eq("custom_domain", cleanDomain)
+          .limit(1);
+
+        if (existingDomainStore && existingDomainStore.length > 0) {
+          return NextResponse.json(
+            { detail: "Ce nom de domaine personnalisé est déjà associé à une autre boutique." },
+            { status: 400 }
+          );
+        }
+
+        filteredBody.custom_domain = cleanDomain;
+      } else {
+        filteredBody.custom_domain = null;
       }
+    }
+
+    // Validation & limite de taille pour settings (max 50 Ko)
+    if (filteredBody.settings !== undefined) {
+      if (typeof filteredBody.settings !== "object" || filteredBody.settings === null || Array.isArray(filteredBody.settings)) {
+        return NextResponse.json({ detail: "Le champ settings doit être un objet JSON valide." }, { status: 400 });
+      }
+      const rawSettingsJson = JSON.stringify(filteredBody.settings);
+      if (rawSettingsJson.length > 50000) {
+        return NextResponse.json({ detail: "Le champ settings dépasse la taille maximale autorisée (50 Ko)." }, { status: 400 });
+      }
+      const ALLOWED_SETTINGS_KEYS = new Set([
+        "instagram_url",
+        "facebook_page_url",
+        "shipping_slip",
+        "security",
+        "carrier",
+        "manual_shipping",
+        "notifications",
+        "custom_domain",
+      ]);
+      const sanitizedSettings: Record<string, any> = {};
+      for (const [k, v] of Object.entries(filteredBody.settings)) {
+        if (ALLOWED_SETTINGS_KEYS.has(k)) {
+          sanitizedSettings[k] = v;
+        }
+      }
+      filteredBody.settings = sanitizedSettings;
+    }
+
+    // Validation & limite de taille pour content_overrides (max 100 Ko)
+    if (filteredBody.content_overrides !== undefined) {
+      if (typeof filteredBody.content_overrides !== "object" || filteredBody.content_overrides === null || Array.isArray(filteredBody.content_overrides)) {
+        return NextResponse.json({ detail: "Le champ content_overrides doit être un objet JSON valide." }, { status: 400 });
+      }
+      const rawOverridesJson = JSON.stringify(filteredBody.content_overrides);
+      if (rawOverridesJson.length > 100000) {
+        return NextResponse.json({ detail: "Le champ content_overrides dépasse la taille maximale autorisée (100 Ko)." }, { status: 400 });
+      }
+      const ALLOWED_OVERRIDES_KEYS = new Set([
+        "hero",
+        "notice_bar",
+        "announcement",
+        "theme_custom",
+        "price",
+        "badge",
+        "cta",
+        "faq",
+        "testimonials",
+        "payment_settings",
+      ]);
+      const sanitizedOverrides: Record<string, any> = {};
+      for (const [k, v] of Object.entries(filteredBody.content_overrides)) {
+        if (ALLOWED_OVERRIDES_KEYS.has(k) || typeof v === "string" || typeof v === "number" || typeof v === "boolean" || v === null) {
+          sanitizedOverrides[k] = v;
+        }
+      }
+      filteredBody.content_overrides = sanitizedOverrides;
     }
 
     // Protection plan pour multi-pixels (TikTok & Google Analytics)

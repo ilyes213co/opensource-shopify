@@ -21,8 +21,11 @@ export async function PATCH(
 
     const body = await req.json();
     const patches = body.content_overrides;
-    if (!patches || typeof patches !== "object") {
-      return NextResponse.json({ detail: "content_overrides doit être un objet JSON" }, { status: 400 });
+    if (!patches || typeof patches !== "object" || Array.isArray(patches)) {
+      return NextResponse.json({ detail: "content_overrides doit être un objet JSON valide" }, { status: 400 });
+    }
+    if (JSON.stringify(patches).length > 100000) {
+      return NextResponse.json({ detail: "content_overrides dépasse la taille maximale autorisée (100 Ko)" }, { status: 400 });
     }
 
     const currentData = (typeof check.store.content_overrides === "object" && check.store.content_overrides !== null)

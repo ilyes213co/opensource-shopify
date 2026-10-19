@@ -39,31 +39,21 @@ export async function PATCH(
 
     const body = await req.json();
 
+    // Whitelist stricte correspondant UNIQUEMENT aux colonnes réelles de la table 'products'.
+    // Bannit id et store_id (immuables) ainsi que tout champ virtuel absent du schéma SQL.
     const ALLOWED_PRODUCT_PATCH_FIELDS = [
       "name",
       "slug",
       "description",
       "price",
       "original_price",
-      "compare_price",
-      "cost_price",
-      "stock",
-      "stock_quantity",
-      "status",
       "category",
+      "stock_quantity",
       "images",
       "options",
-      "variants",
-      "upsells",
-      "sku",
       "is_featured",
       "position",
-      "seo_title",
-      "seo_description",
-      "shipping_fee",
-      "video_url",
-      "tags",
-      "badge",
+      "status",
     ] as const;
 
     const filteredBody: Record<string, any> = {};

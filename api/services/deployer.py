@@ -216,6 +216,7 @@ class StoreDeployer:
 
         # 1. Utiliser le github_repo déjà stocké s'il existe, sinon convention store-{slug}
         stored_repo = (store.get("github_repo") or "").strip()
+        stored_project = (store.get("vercel_project_id") or "").strip()
         if stored_repo:
             repo_name = stored_repo.rstrip("/").split("/")[-1]
         else:
@@ -239,7 +240,6 @@ class StoreDeployer:
                             f"'{other.get('name')}' (ID: {other.get('id')}). Déploiement refusé pour éviter tout écrasement."
                         )
                 # Vérification collision sur vercel_project_id
-                stored_project = store.get("vercel_project_id")
                 if stored_project and other.get("vercel_project_id") == stored_project:
                     raise RuntimeError(
                         f"Conflit de déploiement : le projet Vercel '{stored_project}' est déjà associé à la boutique "
@@ -256,6 +256,41 @@ class StoreDeployer:
         )
 
         async with httpx.AsyncClient(timeout=60.0) as http:
+
+            # 1. bis : Pour une boutique sans github_repo ni vercel_project_id enregistrés,
+            # si un dépôt GitHub ou projet Vercel store-{slug} existe déjà,
+            # NE le réutilise PAS et n'écrase aucun fichier : utilise store-{slug}-{8 premiers caractères de l'id}.
+            if not stored_repo and not stored_project:
+                default_candidate = f"store-{slug}"
+                collision = False
+                try:
+                    gh_chk = await http.get(
+                        f"https://api.github.com/repos/{owner}/{default_candidate}",
+                        headers=GITHUB_HEADERS,
+                    )
+                    if gh_chk.status_code == 200:
+                        collision = True
+                except Exception as e:
+                    logger.warning("Vérification collision GitHub %s ignorée: %s", default_candidate, e)
+
+                if not collision:
+                    try:
+                        vc_chk = await http.get(
+                            f"https://api.vercel.com/v9/projects/{default_candidate}",
+                            headers=VERCEL_HEADERS,
+                        )
+                        if vc_chk.status_code == 200:
+                            collision = True
+                    except Exception as e:
+                        logger.warning("Vérification collision Vercel %s ignorée: %s", default_candidate, e)
+
+                if collision:
+                    short_id = str(store_id).replace("-", "")[:8].lower() if len(str(store_id).replace("-", "")) >= 8 else str(store_id)[:8].lower()
+                    repo_name = f"store-{slug}-{short_id}"
+                    logger.info(
+                        "Dépôt ou projet existant détecté pour '%s'. Utilisation du nom unique '%s' pour la boutique %s.",
+                        default_candidate, repo_name, store_id,
+                    )
 
             # ── Step 1: GitHub repo (best-effort) ───────────────────────
             github_url: Optional[str] = None
@@ -284,15 +319,19 @@ class StoreDeployer:
             )
 
             # ── Step 4: Configure custom domain (best-effort) ──────────
-            subdomain = f"{slug}.{PLATFORM_DOMAIN}"
+            platform_domain = os.getenv("PLATFORM_DOMAIN", "").strip() or PLATFORM_DOMAIN
+            subdomain = f"{slug}.{platform_domain}"
             custom_domain_ok = False
-            if PLATFORM_DOMAIN and PLATFORM_DOMAIN not in ("yourdomain.com", "example.com"):
+            subdomain_status = "not_configured"
+            subdomain_warning = None
+
+            if platform_domain and platform_domain not in ("yourdomain.com", "example.com"):
                 try:
                     logger.info(
                         "Deploy step=domain store_id=%s project_id=%s domain=%s",
                         store_id, project_id, subdomain,
                     )
-                    custom_domain_ok = await self._add_vercel_domain(
+                    custom_domain_ok, subdomain_status, subdomain_warning = await self._add_vercel_domain(
                         http, project_id, subdomain,
                     )
                 except Exception as e:
@@ -300,6 +339,8 @@ class StoreDeployer:
                         "Custom domain %s add failed (non-fatal): %s",
                         subdomain, e,
                     )
+                    subdomain_status = "error"
+                    subdomain_warning = str(e)
 
             # ── Step 5: Choose the public URL ──────────────────────────
             canonical_vercel_url = f"https://{repo_name}.vercel.app"
@@ -322,10 +363,19 @@ class StoreDeployer:
             supabase.table("stores").update(update_data).eq("id", store_id).execute()
 
             logger.info(
-                "Store %s deployed successfully: %s (github=%s, project=%s)",
-                store_id, published_url, project_id, deploy_id,
+                "Store %s deployed successfully: %s (github=%s, project=%s, subdomain_status=%s)",
+                store_id, published_url, project_id, deploy_id, subdomain_status,
             )
-            return {"url": published_url, "project_id": project_id, "deployment_id": deploy_id}
+            deploy_result = {
+                "url": published_url,
+                "project_id": project_id,
+                "deployment_id": deploy_id,
+                "repo_name": repo_name,
+                "subdomain_status": subdomain_status,
+            }
+            if subdomain_warning:
+                deploy_result["subdomain_warning"] = subdomain_warning
+            return deploy_result
 
     # ── GitHub helpers ──────────────────────────────────────────────────────
 
@@ -667,12 +717,12 @@ class StoreDeployer:
 
     async def _add_vercel_domain(
         self, http: httpx.AsyncClient, project_id: str, domain: str,
-    ) -> bool:
+    ) -> tuple[bool, str, Optional[str]]:
         """
-        Add a custom domain to the project. Returns True if Vercel
-        accepted it AND DNS is verified (not misconfigured). If DNS
-        is misconfigured, deletes the broken domain from Vercel so
-        it doesn't leave an error badge, and returns False.
+        Add a custom domain to the project.
+        Returns: (success: bool, status: str, warning_or_error: Optional[str])
+        If the domain is already attached to another project, does not reassign it,
+        returns (False, "conflict_ignored", warning).
         """
         resp = await http.post(
             f"https://api.vercel.com/v10/projects/{project_id}/domains",
@@ -680,12 +730,41 @@ class StoreDeployer:
             timeout=15,
             json={"name": domain},
         )
-        if resp.status_code not in (200, 201, 409):
+
+        if resp.status_code == 409:
+            # Vérifier si le domaine appartient bien à CE projet spécifique
+            chk_resp = await http.get(
+                f"https://api.vercel.com/v9/projects/{project_id}/domains/{domain}",
+                headers=VERCEL_HEADERS,
+                timeout=10,
+            )
+            if chk_resp.status_code != 200:
+                logger.warning(
+                    "Domain %s is attached to another Vercel project (not %s). Skipping domain reassignment.",
+                    domain, project_id,
+                )
+                return False, "conflict_ignored", f"Le sous-domaine {domain} est déjà rattaché à un autre projet Vercel et n'a pas été réattribué."
+            logger.info("Domain %s already configured on project %s", domain, project_id)
+        elif resp.status_code not in (200, 201):
+            # Analyser si l'erreur 400 indique un conflit avec un autre projet
+            try:
+                err_data = resp.json().get("error", {})
+                err_code = err_data.get("code", "")
+                err_msg = err_data.get("message", "")
+                if err_code in ("domain_already_in_use", "conflicting_domain") or "already in use" in err_msg.lower() or "belongs to" in err_msg.lower():
+                    logger.warning(
+                        "Domain %s is already in use by another project: %s. Skipping domain reassignment.",
+                        domain, err_msg,
+                    )
+                    return False, "conflict_ignored", f"Le sous-domaine {domain} est déjà rattaché à un autre projet Vercel et n'a pas été réattribué."
+            except Exception:
+                pass
+
             logger.warning(
                 "Domain add %s returned %d: %s",
                 domain, resp.status_code, resp.text[:300],
             )
-            return False
+            return False, "error", f"Erreur Vercel {resp.status_code} lors de l'ajout du domaine {domain}"
 
         # Verify whether DNS actually resolves to Vercel
         try:
@@ -706,14 +785,12 @@ class StoreDeployer:
                         headers=VERCEL_HEADERS,
                         timeout=10,
                     )
-                    return False
+                    return False, "misconfigured", f"Le domaine {domain} n'a pas de DNS pointant vers Vercel."
         except Exception as e:
             logger.warning("Error checking domain config for %s: %s", domain, e)
-            return False
+            return False, "error", str(e)
 
-        if resp.status_code == 409:
-            logger.info("Domain %s already configured on project %s", domain, project_id)
-        return True
+        return True, "configured", None
 
     # ── Redeploy ───────────────────────────────────────────────────────────
 
