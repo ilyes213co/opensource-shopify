@@ -90,6 +90,12 @@ export default function HomePage() {
             priceCurrency: "DZD",
             name: "Plan Pro",
           },
+          {
+            "@type": "Offer",
+            price: "5000",
+            priceCurrency: "DZD",
+            name: "Plan Business",
+          },
         ],
       },
       {

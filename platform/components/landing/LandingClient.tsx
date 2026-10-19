@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, Plus, Minus } from "lucide-react";
+import { ArrowRight, ChevronDown, Plus, Minus, Check, Sparkles } from "lucide-react";
 import EasyTradeLogo from "@/components/brand/EasyTradeLogo";
 import ThreeAmbientScene from "@/components/brand/ThreeAmbientScene";
 
@@ -12,11 +12,13 @@ import {
   STATS,
   STEPS,
   FAQ_QUESTIONS,
+  PRICING_PLANS,
 } from "@/lib/landing-data";
 
 export default function LandingClient() {
   const [counts, setCounts] = useState<number[]>([0, 0, 0, 0]);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const statsRef = useRef<HTMLDivElement | null>(null);
   const animatedRef = useRef<boolean>(false);
 
@@ -83,6 +85,9 @@ export default function LandingClient() {
           </a>
           <a href="#how-it-works" className="hover:text-white transition-colors duration-200">
             Comment ça marche
+          </a>
+          <a href="#pricing" className="hover:text-white transition-colors duration-200">
+            Tarifs
           </a>
           <a href="#stats" className="hover:text-white transition-colors duration-200">
             Statistiques
@@ -427,6 +432,221 @@ export default function LandingClient() {
               <p className="text-sm text-white/70 leading-relaxed font-normal">{s.body}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── PRICING SECTION ── */}
+      <section id="pricing" className="py-24 px-6 md:px-12 max-w-7xl mx-auto relative z-10">
+        <div className="space-y-4 mb-14 text-center">
+          <span
+            className="text-xs font-black uppercase tracking-[3px]"
+            style={{
+              color: "var(--gl, #93c5fd)",
+              textShadow: "0 0 16px var(--g-glow, rgba(37, 64, 234, 0.6))",
+            }}
+          >
+            Tarification Transparente
+          </span>
+          <h2
+            className="text-3xl md:text-5xl font-black text-white tracking-tight"
+            style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
+          >
+            Des forfaits clairs, adaptés au marché algérien
+          </h2>
+          <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto">
+            Zéro commission sur vos ventes. Démarrez gratuitement et passez à la vitesse supérieure quand vos commandes décollent.
+          </p>
+
+          {/* Billing Switcher Toggle */}
+          <div className="pt-6 flex items-center justify-center">
+            <div
+              className="inline-flex items-center p-1.5 rounded-2xl border backdrop-blur-xl"
+              style={{
+                background: "rgba(10, 14, 38, 0.8)",
+                borderColor: "rgba(96, 165, 250, 0.3)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setBillingCycle("monthly")}
+                className={`px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-200 ${
+                  billingCycle === "monthly"
+                    ? "bg-[#2540ea] text-white shadow-lg"
+                    : "text-white/60 hover:text-white"
+                }`}
+              >
+                Facturation Mensuelle
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingCycle("yearly")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-200 ${
+                  billingCycle === "yearly"
+                    ? "bg-[#2540ea] text-white shadow-lg"
+                    : "text-white/60 hover:text-white"
+                }`}
+              >
+                <span>Facturation Annuelle</span>
+                <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  -17% (2 mois offerts)
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Pricing Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+          {PRICING_PLANS.map((p) => {
+            const isYearly = billingCycle === "yearly";
+            const displayPrice = isYearly ? p.yearlyPrice : p.monthlyPrice;
+            const formattedPrice = displayPrice.toLocaleString("fr-DZ");
+            const isFree = p.id === "free";
+
+            return (
+              <div
+                key={p.id}
+                onMouseMove={handleCardMouseMove}
+                className={`relative rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 ${
+                  p.popular ? "lg:-translate-y-2" : ""
+                }`}
+                style={{
+                  background: p.popular
+                    ? "linear-gradient(165deg, rgba(37, 64, 234, 0.32) 0%, rgba(10, 14, 38, 0.95) 100%)"
+                    : "linear-gradient(155deg, rgba(28, 44, 148, 0.22) 0%, rgba(10, 14, 38, 0.85) 100%)",
+                  border: p.popular
+                    ? "2px solid rgba(147, 197, 253, 0.6)"
+                    : "1px solid var(--border, rgba(96, 165, 250, 0.28))",
+                  boxShadow: p.popular
+                    ? "0 20px 50px -10px rgba(37, 64, 234, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25)"
+                    : "0 12px 36px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
+                  backdropFilter: "blur(20px)",
+                }}
+              >
+                {/* Popular floating badge */}
+                {p.popular && (
+                  <div
+                    className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-black uppercase tracking-wider text-white shadow-lg"
+                    style={{
+                      background: "linear-gradient(135deg, #2540ea 0%, #1a2ca3 100%)",
+                      border: "1px solid rgba(255, 255, 255, 0.35)",
+                      boxShadow: "0 4px 16px rgba(37, 64, 234, 0.6)",
+                    }}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-[#93c5fd]" />
+                    <span>Le plus populaire</span>
+                  </div>
+                )}
+
+                <div>
+                  {/* Tier Header */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span
+                      className="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-lg border"
+                      style={{
+                        background: p.popular ? "rgba(37, 64, 234, 0.35)" : "rgba(255, 255, 255, 0.05)",
+                        borderColor: p.popular ? "rgba(147, 197, 253, 0.4)" : "rgba(255, 255, 255, 0.1)",
+                        color: p.popular ? "#bfdbfe" : "rgba(255, 255, 255, 0.8)",
+                      }}
+                    >
+                      {p.badge}
+                    </span>
+                    <span className="text-xs font-semibold text-white/50">{p.storesLimit}</span>
+                  </div>
+
+                  <h3
+                    className="text-2xl font-black text-white tracking-tight"
+                    style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
+                  >
+                    {p.name}
+                  </h3>
+
+                  <p className="text-xs text-white/60 mt-1.5 min-h-[36px] leading-relaxed">
+                    {p.tagline}
+                  </p>
+
+                  {/* Price display */}
+                  <div className="my-6 pb-6 border-b border-white/10">
+                    <div className="flex items-baseline gap-2">
+                      <span
+                        className="text-4xl md:text-5xl font-black tracking-tight text-white"
+                        style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
+                      >
+                        {isFree ? "0" : formattedPrice}
+                      </span>
+                      <span className="text-lg font-bold text-white/70">DZD</span>
+                      <span className="text-xs text-white/50">
+                        {isFree ? "/ pour toujours" : isYearly ? "/ an" : "/ mois"}
+                      </span>
+                    </div>
+                    {isYearly && !isFree && (
+                      <p className="text-[11px] text-emerald-400 font-semibold mt-1">
+                        Soit environ {Math.round(p.yearlyPrice / 12).toLocaleString("fr-DZ")} DZD / mois
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Features list */}
+                  <div className="space-y-3 mb-8">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-white/50">
+                      Ce qui est inclus :
+                    </p>
+                    {p.features.map((feat, fIdx) => (
+                      <div key={fIdx} className="flex items-start gap-2.5 text-xs md:text-sm text-white/80">
+                        <Check className="w-4 h-4 text-[#60a5fa] shrink-0 mt-0.5" />
+                        <span className="leading-snug">{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Card CTA button */}
+                <Link
+                  href={p.href}
+                  className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 hover:-translate-y-0.5 ${
+                    p.popular
+                      ? "text-white shadow-xl hover:brightness-110"
+                      : "text-white hover:bg-white/10"
+                  }`}
+                  style={{
+                    background: p.popular
+                      ? "linear-gradient(135deg, var(--g, #2540ea) 0%, var(--gd, #1a2ca3) 100%)"
+                      : "rgba(255, 255, 255, 0.06)",
+                    border: p.popular
+                      ? "1px solid rgba(255, 255, 255, 0.3)"
+                      : "1px solid rgba(255, 255, 255, 0.15)",
+                    boxShadow: p.popular
+                      ? "0 10px 28px -6px var(--g-glow, rgba(37, 64, 234, 0.6))"
+                      : "none",
+                  }}
+                >
+                  <span>{p.cta}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Trust & payment methods banner under pricing */}
+        <div
+          className="mt-12 rounded-2xl p-5 border text-center flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/70"
+          style={{
+            background: "rgba(10, 14, 38, 0.6)",
+            borderColor: "rgba(96, 165, 250, 0.2)",
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          <div className="flex items-center gap-2 font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span>Paiement 100% sécurisé en Algérie (DZD)</span>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] text-white/60">
+            <span>✓ BaridiMob</span>
+            <span>✓ Carte Edahabia</span>
+            <span>✓ Virement bancaire</span>
+            <span>✓ Aucun frais de transaction prélevé</span>
+          </div>
         </div>
       </section>
 

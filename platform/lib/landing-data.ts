@@ -107,3 +107,87 @@ export const FAQ_QUESTIONS = [
       "Moins de 5 minutes. Notre assistant de création guidé et notre IA vous permettent de choisir un thème, importer votre logo, saisir votre produit vedette et obtenir une URL publique active immédiatement.",
   },
 ];
+
+export interface PricingPlan {
+  id: "free" | "pro" | "business";
+  name: string;
+  badge?: string;
+  popular?: boolean;
+  tagline: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  storesLimit: string;
+  productsLimit: string;
+  features: string[];
+  cta: string;
+  href: string;
+}
+
+export const PRICING_PLANS: PricingPlan[] = [
+  {
+    id: "free",
+    name: "Gratuit",
+    badge: "Démarrage",
+    tagline: "Idéal pour tester et lancer votre première boutique sans aucun risque.",
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    storesLimit: "1 Boutique active",
+    productsLimit: "Jusqu'à 10 produits",
+    features: [
+      "1 Boutique active",
+      "Jusqu'à 10 produits",
+      "4 Thèmes standards personnalisables",
+      "Paiement à la livraison (COD) 58 wilayas",
+      "Gestion des commandes & bordereaux",
+      "Analytiques sur 7 jours",
+      "Hébergement rapide et sécurisé (SSL inclus)",
+    ],
+    cta: "Commencer gratuitement",
+    href: "/register?plan=free",
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    badge: "Le plus populaire",
+    popular: true,
+    tagline: "Pour les marchands et créateurs de marques en pleine expansion.",
+    monthlyPrice: 2000,
+    yearlyPrice: 20000,
+    storesLimit: "Jusqu'à 5 Boutiques & Tunnels",
+    productsLimit: "Produits illimités",
+    features: [
+      "Jusqu'à 5 Boutiques & Tunnels actifs",
+      "Produits et variantes illimités",
+      "Tous les 10 Thèmes Premium débloqués",
+      "Génération IA illimitée (descriptions & textes)",
+      "Sous-domaine dédié & Domaine personnalisé (.dz, .com)",
+      "Tarifs 58 wilayas modifiables en masse (1 clic)",
+      "Comparateur de tunnels & Analytiques complètes",
+      "Support prioritaire WhatsApp 7j/7",
+    ],
+    cta: "Choisir le forfait Pro",
+    href: "/register?plan=pro",
+  },
+  {
+    id: "business",
+    name: "Business",
+    badge: "Agences & Équipes",
+    tagline: "Pour les agences e-commerce, grossistes et gros volumes de vente.",
+    monthlyPrice: 5000,
+    yearlyPrice: 50000,
+    storesLimit: "Boutiques illimitées",
+    productsLimit: "Produits illimités",
+    features: [
+      "Boutiques & Tunnels de vente illimités",
+      "Tous les avantages du forfait Pro inclus",
+      "Accès multi-utilisateurs & permissions d'équipe",
+      "Génération IA haute priorité sans file d'attente",
+      "Export avancé des commandes (format transporteurs)",
+      "Hébergement Cloud Haute Performance Dédié",
+      "Gestionnaire de compte dédié & Support VIP 24/7",
+    ],
+    cta: "Choisir le forfait Business",
+    href: "/register?plan=business",
+  },
+];
+
