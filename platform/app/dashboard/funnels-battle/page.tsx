@@ -25,16 +25,6 @@ import {
   CheckCircle2,
   Crown,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  Legend,
-} from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { analyticsApi } from "@/lib/api";
 import { useUserPlan } from "@/lib/use-user-plan";
@@ -81,7 +71,6 @@ export default function FunnelsBattlePage() {
     new Date().toISOString().slice(0, 10)
   );
   const [selectedFunnelIds, setSelectedFunnelIds] = useState<string[]>([]);
-  const [metricTab, setMetricTab] = useState<"revenue" | "views">("revenue");
 
   // Requête API vers /api/analytics/compare
   // Seule source de vérité : calcul effectué sur le backend FastAPI
@@ -135,6 +124,14 @@ export default function FunnelsBattlePage() {
   // Synchronise les funnels sélectionnés à la première réponse si non encore définis
   const availableFunnels = data?.available_funnels || [];
   const funnelsList = data?.funnels || [];
+
+  const maxViews = useMemo(() => {
+    return Math.max(...funnelsList.map((f: any) => f.views || 0), 1);
+  }, [funnelsList]);
+
+  const maxRevenue = useMemo(() => {
+    return Math.max(...funnelsList.map((f: any) => f.delivered_revenue || 0), 1);
+  }, [funnelsList]);
 
   // ─── Écran Verrouillé : Compte Gratuit (Refus par défaut, 403) ──────────────
   if (!userPlan.isLoading && !userPlan.canCompareFunnels) {
@@ -544,123 +541,90 @@ export default function FunnelsBattlePage() {
             })}
           </div>
 
-          {/* ── Graphique Groupé Recharts ────────────────────────────────────── */}
+          {/* ── Graphique Horizontal : Visites et Chiffre d'Affaires par Funnel ── */}
           <div className="rounded-3xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] p-6 sm:p-8 space-y-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                  Évolution temporelle comparée
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Progression journalière segmentée par tunnel sur le fuseau horaire Algérie.
-                </p>
-              </div>
+            <div className="space-y-1">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                Visites et chiffre d&apos;affaires par funnel
+              </h3>
+            </div>
 
-              {/* Onglets métrique graphique */}
-              <div className="inline-flex items-center rounded-xl bg-slate-100 dark:bg-white/[0.05] p-1 border border-slate-200 dark:border-white/[0.08] self-start sm:self-auto">
-                <button
-                  onClick={() => setMetricTab("revenue")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    metricTab === "revenue"
-                      ? "bg-white dark:bg-accent text-slate-900 dark:text-white shadow-xs"
-                      : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  CA Livré (DZD)
-                </button>
-                <button
-                  onClick={() => setMetricTab("views")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    metricTab === "views"
-                      ? "bg-white dark:bg-accent text-slate-900 dark:text-white shadow-xs"
-                      : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
+            <div className="space-y-6 pt-2">
+              {funnelsList.map((f: any) => {
+                const viewsPct =
+                  f.views > 0
+                    ? Math.max(1.5, (f.views / maxViews) * 78)
+                    : 0;
+                const revPct =
+                  f.delivered_revenue > 0
+                    ? Math.max(1.5, (f.delivered_revenue / maxRevenue) * 78)
+                    : 0;
+
+                return (
+                  <div
+                    key={f.id}
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6"
+                  >
+                    {/* Nom du funnel */}
+                    <div className="w-32 sm:w-44 shrink-0 font-bold text-sm text-slate-900 dark:text-white truncate">
+                      {f.name}
+                    </div>
+
+                    {/* Barres horizontales Visites & CA */}
+                    <div className="flex-1 space-y-2">
+                      {/* Barre 1 : Visites (Bleu ciel) */}
+                      <div className="flex items-center">
+                        <div
+                          className="h-2.5 sm:h-3 rounded-full bg-[#60A5FA] transition-all duration-500 ease-out shrink-0"
+                          style={{
+                            width: f.views > 0 ? `${viewsPct}%` : "8px",
+                          }}
+                        />
+                        <span className="ml-3 text-xs font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                          {f.views > 0 ? formatNumber(f.views) : "0"}
+                        </span>
+                      </div>
+
+                      {/* Barre 2 : CA Livré (Bleu marque) */}
+                      <div className="flex items-center">
+                        <div
+                          className="h-2.5 sm:h-3 rounded-full bg-[#2540EA] transition-all duration-500 ease-out shrink-0"
+                          style={{
+                            width: f.delivered_revenue > 0 ? `${revPct}%` : "8px",
+                          }}
+                        />
+                        <span className="ml-3 text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                          {f.delivered_revenue > 0
+                            ? `${formatNumber(f.delivered_revenue)} DZD`
+                            : "-"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Légende */}
+            <div className="flex items-center gap-6 pt-4 border-t border-slate-100 dark:border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-[#60A5FA]" />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                   Visites
-                </button>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-[#2540EA]" />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                  CA livré
+                </span>
               </div>
             </div>
 
-            <div className="h-72 sm:h-84 w-full">
-              {data.daily_series && data.daily_series.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.daily_series} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fill: "currentColor", opacity: 0.6, fontSize: 11 }}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fill: "currentColor", opacity: 0.6, fontSize: 11 }}
-                      tickFormatter={(v) => (metricTab === "revenue" ? formatCurrency(v) : `${v}`)}
-                    />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white/95 dark:bg-[#12121C]/95 backdrop-blur-md p-3 shadow-lg text-xs space-y-1.5 min-w-[160px]">
-                              <p className="font-bold text-slate-900 dark:text-white pb-1 border-b border-slate-100 dark:border-white/[0.08]">
-                                {label}
-                              </p>
-                              {payload.map((item: any, idx: number) => {
-                                const fid = item.dataKey.replace("revenue_", "").replace("views_", "");
-                                const fname = funnelsMap[fid]?.name || item.name;
-                                return (
-                                  <div key={idx} className="flex items-center justify-between gap-3">
-                                    <div className="flex items-center gap-1.5">
-                                      <span
-                                        className="w-2.5 h-2.5 rounded-full"
-                                        style={{ backgroundColor: item.color }}
-                                      />
-                                      <span className="text-slate-600 dark:text-white/70 truncate max-w-[120px]">
-                                        {fname}
-                                      </span>
-                                    </div>
-                                    <span className="font-bold text-slate-900 dark:text-white">
-                                      {metricTab === "revenue"
-                                        ? formatCurrency(item.value)
-                                        : `${item.value} vues`}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Legend
-                      formatter={(val) => {
-                        const fid = val.replace("revenue_", "").replace("views_", "");
-                        return (
-                          <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-                            {funnelsMap[fid]?.name || val}
-                          </span>
-                        );
-                      }}
-                    />
-                    {funnelsList.map((f: any, idx: number) => (
-                      <Bar
-                        key={f.id}
-                        dataKey={metricTab === "revenue" ? `revenue_${f.id}` : `views_${f.id}`}
-                        name={f.name}
-                        fill={FUNNEL_PALETTE[idx % FUNNEL_PALETTE.length]}
-                        radius={[4, 4, 0, 0]}
-                      />
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-xs text-slate-400">
-                  Aucune donnée temporelle à afficher pour cette période.
-                </div>
-              )}
-            </div>
+            {/* Note sous le graphique */}
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pt-1">
+              <strong>Données de la période.</strong> Visites totales (non uniques). CA = commandes livrées uniquement ; le CA en cours (confirmées ou expédiées) rejoint le classement dès la livraison. Moins de 30 visites : échantillon trop faible pour conclure.
+            </p>
           </div>
 
           {/* ── Tableau Comparatif Détaillé (Desktop) & Cartes (Mobile) ──────── */}
