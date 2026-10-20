@@ -40,6 +40,36 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/apple",
+        destination: "/novatech-store",
+        statusCode: 301,
+      },
+      {
+        source: "/apple/:path*",
+        destination: "/novatech-store/:path*",
+        statusCode: 301,
+      },
+      {
+        source: "/adidas",
+        destination: "/sportstyle-dz",
+        statusCode: 301,
+      },
+      {
+        source: "/adidas/:path*",
+        destination: "/sportstyle-dz/:path*",
+        statusCode: 301,
+      },
+      {
+        source: "/luxury-guanzo",
+        destination: "/maison-guanzo",
+        statusCode: 301,
+      },
+      {
+        source: "/luxury-guanzo/:path*",
+        destination: "/maison-guanzo/:path*",
+        statusCode: 301,
+      },
+      {
         source: "/dashboard/orders",
         destination: "/dashboard/boutique/orders",
         permanent: false,

@@ -18,10 +18,37 @@ from slug_utils import (
     generate_fallback_slug,
     RESERVED_SLUGS,
     SLUG_PATTERN,
+    check_brand_blocklist,
+    BRAND_REJECTION_MESSAGE,
 )
 
 
 class TestSlugUtils(unittest.TestCase):
+
+    def test_brand_blocklist(self):
+        cases = [
+            ("adidas-store", True),
+            ("Adidas-Store", True),
+            ("apple", True),
+            ("apple-shop", True),
+            ("my-nike-shop", True),
+            ("shein-dz", True),
+            ("temu-algerie", True),
+            ("louis-vuitton", True),
+            ("hm", True),
+            ("hm-store", True),
+            ("novatech-store", False),
+            ("sportstyle-dz", False),
+            ("maison-guanzo", False),
+        ]
+        for name, expected in cases:
+            blocked, reason = check_brand_blocklist(name)
+            self.assertEqual(blocked, expected, f"Failed for {name}")
+            if expected:
+                self.assertEqual(reason, BRAND_REJECTION_MESSAGE)
+
+        self.assertTrue(is_slug_reserved("adidas-store"))
+        self.assertFalse(is_slug_reserved("novatech-store"))
 
     def test_elegance(self):
         slug = normalize_slug("Élégance")

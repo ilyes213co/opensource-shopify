@@ -16,9 +16,38 @@ import {
   validateSlugFormat,
   RESERVED_SLUGS,
   SLUG_PATTERN,
+  checkBrandBlocklist,
+  BRAND_REJECTION_MESSAGE,
 } from "../lib/slug-utils.ts";
 
 console.log("Running TypeScript/Node slug-utils test suite...");
+
+// 0. Tests Blocklist marques
+const brandTests = [
+  { input: "adidas-store", expected: true },
+  { input: "Adidas-Store", expected: true },
+  { input: "apple", expected: true },
+  { input: "apple-shop", expected: true },
+  { input: "my-nike-shop", expected: true },
+  { input: "shein-dz", expected: true },
+  { input: "temu-algerie", expected: true },
+  { input: "louis-vuitton", expected: true },
+  { input: "hm", expected: true },
+  { input: "hm-store", expected: true },
+  { input: "novatech-store", expected: false },
+  { input: "sportstyle-dz", expected: false },
+  { input: "maison-guanzo", expected: false },
+];
+
+for (const bt of brandTests) {
+  const res = checkBrandBlocklist(bt.input);
+  assert.equal(res.isBlocked, bt.expected, `Slug '${bt.input}' bloqué attendu: ${bt.expected}`);
+  if (bt.expected) {
+    assert.equal(res.reason, BRAND_REJECTION_MESSAGE);
+  }
+}
+assert.equal(isSlugReserved("adidas-store"), true, "adidas-store doit être réservé");
+assert.equal(isSlugReserved("novatech-store"), false, "novatech-store ne doit pas être réservé");
 
 // 1. "Élégance"
 const s1 = normalizeSlug("Élégance");

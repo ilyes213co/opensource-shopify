@@ -4,6 +4,7 @@ import {
   normalizeSlug,
   isSlugReserved,
   validateSlugFormat,
+  checkBrandBlocklist,
 } from "@/lib/slug-utils";
 
 // Limiteur de débit glissant en mémoire (60 req / min par utilisateur)
@@ -60,7 +61,17 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 2. Vérification mot réservé
+    // 2. Vérification marque protégée ou mot réservé
+    const brandCheck = checkBrandBlocklist(rawSlug);
+    if (brandCheck.isBlocked) {
+      return NextResponse.json({
+        status: "reserved",
+        normalized,
+        suggestions: [],
+        reason: brandCheck.reason,
+      });
+    }
+
     if (isSlugReserved(rawSlug)) {
       return NextResponse.json({
         status: "reserved",

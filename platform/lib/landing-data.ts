@@ -110,49 +110,39 @@ export const FAQ_QUESTIONS = [
       "Non, 0% de commission. Vous conservez l'intégralité de vos marges sur chaque vente. Notre modèle économique repose uniquement sur des forfaits d'abonnement fixes transparents (dont un forfait Gratuit pour démarrer sans frais).",
   },
   {
-    question: "Comment mes clients finaux règlent-ils leurs achats ?",
+    question: "Que se passe-t-il si mon client refuse le colis ?",
     answer:
-      "En Algérie, le standard absolu est le paiement à la livraison (Cash on Delivery / COD). Vos clients n'ont besoin d'aucune carte bancaire : ils saisissent simplement leur nom, téléphone et adresse sur votre formulaire, puis règlent le montant de la commande en espèces lors de la remise du colis par le livreur.",
+      "Le colis retourne chez le livreur et la commande est marquée \"retournée\" dans votre tableau de bord. Vous pouvez relancer le client par téléphone. Nos outils de vérification des numéros 05/06/07 réduisent les faux envois dès le départ.",
   },
   {
-    question: "Qui paie par carte et qui paie en espèces ?",
+    question: "Quels livreurs puis-je utiliser ?",
     answer:
-      "La distinction est très simple : seul le marchand règle son abonnement SaaS EasyTradez (forfait Pro ou Business) via BaridiMob, carte Edahabia/CIB ou virement local. Les clients finaux de votre boutique, eux, ne paient JAMAIS par carte : ils règlent exclusivement en espèces à la livraison de leur commande.",
+      "Yalidine, ZR Express et Procolis sont intégrés. Vous connectez votre propre compte chez le livreur et gérez vos tarifs.",
   },
   {
-    question: "Puis-je expédier avec Yalidine Express, ZR Express ou Procolis ?",
+    question: "Comment je paie mon abonnement ?",
     answer:
-      "Oui. Vous pouvez renseigner vos tarifs de livraison (domicile et stop-desk) et générer des bordereaux de livraison prêts à imprimer avec le montant exact à encaisser. Vous restez totalement libre de travailler avec le transporteur de votre choix en Algérie.",
+      "En DZD, par BaridiMob ou carte Edahabia/CIB. Vos clients, eux, paient toujours en espèces à la livraison.",
   },
   {
-    question: "Comment limiter les colis refusés ou retours (retour COD) ?",
+    question: "Puis-je migrer depuis Shopify ou YouCan ?",
     answer:
-      "EasyTradez intègre des outils concrets pour sécuriser vos expéditions : obligation de numéro algérien valide à 10 chiffres (05, 06, 07), limitation automatique des commandes répétées suspectes, statut de rappel/confirmation téléphonique avant envoi, et liste noire personnalisable des numéros non sérieux.",
+      "Oui, contactez-nous par email à support@easytradez.site et nous vous aidons à importer vos produits.",
   },
   {
-    question: "Ai-je besoin d'une carte bancaire internationale (Visa/Mastercard) ?",
+    question: "Qui a accès aux données de mes clients ?",
     answer:
-      "Non, aucune carte internationale n'est requise. Pour les forfaits payants, le règlement s'effectue en monnaie locale (DZD) via BaridiMob, carte Edahabia/CIB ou virement bancaire algérien.",
+      "Personne d'autre que vous et votre livreur, uniquement pour la livraison. Voir notre politique de confidentialité.",
   },
   {
-    question: "Ai-je besoin d'un registre de commerce pour tester la plateforme ?",
+    question: "Le support parle-t-il darija ?",
     answer:
-      "Non, vous pouvez démarrer immédiatement avec le forfait Gratuit pour tester votre concept, ajouter vos premiers produits et vérifier l'intérêt de vos clients sans formalité préalable.",
+      "Oui, par email, réponse sous 24h ouvrées.",
   },
   {
-    question: "Puis-je connecter mon propre nom de domaine (.dz ou .com) ?",
+    question: "Et si la plateforme a une panne ?",
     answer:
-      "Oui. Dès le forfait Pro, vous pouvez utiliser votre propre domaine personnalisé (par exemple votreboutique.com ou votreboutique.dz). La configuration s'effectue simplement en ajoutant l'enregistrement CNAME indiqué dans vos paramètres.",
-  },
-  {
-    question: "Puis-je migrer depuis Shopify, YouCan ou Instagram ?",
-    answer:
-      "Absolument. Vous pouvez recréer votre catalogue en quelques minutes grâce à notre interface simplifiée et commencer à rediriger votre audience TikTok et Instagram vers votre nouvelle vitrine EasyTradez sans dépendre de devises étrangères ni de frais cachés.",
-  },
-  {
-    question: "Comment contacter l'équipe d'assistance en cas de besoin ?",
-    answer:
-      "Notre équipe est basée en Algérie et répond directement en arabe algérien (Darija) et en français par e-mail à support@easytradez.site.",
+      "Notre objectif est 99% de disponibilité. Nous communiquons ouvertement sur les incidents.",
   },
 ];
 

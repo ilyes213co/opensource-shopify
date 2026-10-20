@@ -4,8 +4,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
-  Plus,
-  Minus,
   Check,
   Sparkles,
   ShieldCheck,
@@ -27,7 +25,6 @@ import {
 } from "@/lib/landing-data";
 
 export default function LandingClient() {
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
 
   // Dynamic card glow on mouse move
@@ -704,9 +701,9 @@ export default function LandingClient() {
         </div>
       </section>
 
-      {/* ── FAQ SECTION (10 FACTUAL QUESTIONS) ── */}
+      {/* ── FAQ SECTION (8 FACTUAL QUESTIONS VISIBLE ON LOAD) ── */}
       <section id="faq" className="py-20 px-6 md:px-12 max-w-5xl mx-auto relative z-10">
-        <div className="space-y-3 mb-14 text-center">
+        <div className="space-y-3 mb-12 text-center">
           <span
             className="text-xs font-black uppercase tracking-[3px]"
             style={{
@@ -727,51 +724,34 @@ export default function LandingClient() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          {FAQ_QUESTIONS.map((item, idx) => {
-            const isOpen = openFaq === idx;
-            return (
-              <div
-                key={idx}
-                className="rounded-2xl transition-all duration-200 overflow-hidden"
-                style={{
-                  background:
-                    "linear-gradient(155deg, rgba(28, 44, 148, 0.25) 0%, rgba(10, 14, 38, 0.8) 100%)",
-                  border: isOpen
-                    ? "1px solid rgba(96, 165, 250, 0.55)"
-                    : "1px solid var(--border, rgba(96, 165, 250, 0.2))",
-                  boxShadow: isOpen
-                    ? "0 10px 30px -8px rgba(37, 64, 234, 0.35)"
-                    : "0 4px 16px rgba(0, 0, 0, 0.4)",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(isOpen ? null : idx)}
-                  className="w-full px-6 py-5 flex items-center justify-between text-left gap-4 cursor-pointer"
-                >
-                  <span className="font-bold text-base md:text-lg text-white">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {FAQ_QUESTIONS.map((item, idx) => (
+            <div
+              key={idx}
+              className="rounded-2xl p-6 transition-all duration-200 border flex flex-col justify-between"
+              style={{
+                background:
+                  "linear-gradient(155deg, rgba(28, 44, 148, 0.22) 0%, rgba(10, 14, 38, 0.85) 100%)",
+                borderColor: "rgba(96, 165, 250, 0.25)",
+                boxShadow: "0 6px 24px rgba(0, 0, 0, 0.4)",
+              }}
+            >
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <span className="px-2.5 py-1 rounded-md text-xs font-black bg-[#2540ea]/30 border border-[#60a5fa]/40 text-[#bfdbfe] shrink-0">
+                    Q{idx + 1}
+                  </span>
+                  <h3 className="font-bold text-base md:text-lg text-white leading-snug">
                     {item.question}
-                  </span>
-                  <span
-                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-transform duration-200"
-                    style={{
-                      background: isOpen ? "var(--g, #2540ea)" : "rgba(255, 255, 255, 0.05)",
-                      borderColor: isOpen ? "var(--gl, #93c5fd)" : "rgba(255, 255, 255, 0.15)",
-                    }}
-                  >
-                    {isOpen ? <Minus className="w-4 h-4 text-white" /> : <Plus className="w-4 h-4 text-white/70" />}
-                  </span>
-                </button>
+                  </h3>
+                </div>
 
-                {isOpen && (
-                  <div className="px-6 pb-6 pt-1 text-sm md:text-base text-white/75 leading-relaxed border-t border-white/5">
-                    {item.answer}
-                  </div>
-                )}
+                <div className="pt-2 border-t border-white/10 text-sm md:text-base text-white/75 leading-relaxed">
+                  {item.answer}
+                </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </section>
 

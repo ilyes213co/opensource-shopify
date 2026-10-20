@@ -76,10 +76,13 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-400" />
-              3. Responsabilité du Marchand sur ses Produits et ses Ventes
+              3. Responsabilité du Marchand sur ses Produits, son Nom de Boutique et ses Ventes
             </h2>
             <p>
-              Le Marchand demeure seul et unique responsable des articles proposés à la vente sur sa boutique. Il s&apos;engage formellement à respecter la législation algérienne relative au commerce, à la protection du consommateur (Loi 09-03) et aux règles de facturation.
+              Le Marchand demeure seul et unique responsable des articles proposés à la vente sur sa boutique ainsi que du nom commercial et du slug choisis pour son espace. Le marchand garantit formellement que son nom de boutique et son identité visuelle ne violent aucun droit de propriété intellectuelle, marque déposée ou droit de tiers. EasyTradez se réserve le droit de renommer ou de suspendre immédiatement et sans préavis toute boutique en violation de cette disposition.
+            </p>
+            <p>
+              Le Marchand s&apos;engage formellement à respecter la législation algérienne relative au commerce, à la protection du consommateur (Loi 09-03) et aux règles de facturation.
             </p>
             <p>
               EasyTradez agit exclusivement en qualité de prestataire technique et hébergeur au sens de la Loi 09-04. EasyTradez n&apos;est en aucun cas partie aux contrats de vente conclus entre le Marchand et ses clients finaux, ni responsable de la qualité ou de la conformité des marchandises livrées.

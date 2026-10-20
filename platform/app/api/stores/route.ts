@@ -168,11 +168,29 @@ export async function POST(req: NextRequest) {
       validateSlugFormat,
       getCandidateSlug,
       isUniqueSlugViolation,
+      checkBrandBlocklist,
     } = await import("@/lib/slug-utils");
+
+    // Vérification préalable de marque protégée sur le nom ou le slug
+    const brandCheckOnName = checkBrandBlocklist(name);
+    if (brandCheckOnName.isBlocked) {
+      return NextResponse.json({ detail: brandCheckOnName.reason }, { status: 400 });
+    }
 
     let baseSlug = "";
     if (body.slug && typeof body.slug === "string" && body.slug.trim()) {
+      const brandCheckOnSlug = checkBrandBlocklist(body.slug.trim());
+      if (brandCheckOnSlug.isBlocked) {
+        return NextResponse.json({ detail: brandCheckOnSlug.reason }, { status: 400 });
+      }
+
       baseSlug = normalizeSlug(body.slug.trim(), storeType);
+
+      const brandCheckOnBase = checkBrandBlocklist(baseSlug);
+      if (brandCheckOnBase.isBlocked) {
+        return NextResponse.json({ detail: brandCheckOnBase.reason }, { status: 400 });
+      }
+
       if (isSlugReserved(baseSlug)) {
         return NextResponse.json(
           { detail: "Cette adresse est réservée par le système EasyTrade." },
@@ -185,6 +203,11 @@ export async function POST(req: NextRequest) {
       }
     } else {
       baseSlug = normalizeSlug(name, storeType);
+      const brandCheckOnBase = checkBrandBlocklist(baseSlug);
+      if (brandCheckOnBase.isBlocked) {
+        return NextResponse.json({ detail: brandCheckOnBase.reason }, { status: 400 });
+      }
+
       if (isSlugReserved(baseSlug)) {
         baseSlug = `${baseSlug}-1`;
       }

@@ -21,6 +21,7 @@ from slug_utils import (
     validate_slug_format,
     get_candidate_slug,
     is_unique_slug_violation,
+    check_brand_blocklist,
 )
 
 router = APIRouter()
@@ -82,7 +83,16 @@ async def check_slug_availability(
             "reason": reason,
         }
 
-    # 2. Vérification mot réservé
+    # 2. Vérification marque protégée ou mot réservé
+    is_blocked, brand_reason = check_brand_blocklist(raw_slug)
+    if is_blocked:
+        return {
+            "status": "reserved",
+            "normalized": normalized,
+            "suggestions": [],
+            "reason": brand_reason,
+        }
+
     if is_slug_reserved(raw_slug):
         return {
             "status": "reserved",
@@ -171,11 +181,24 @@ async def create_store(
 
     store_type = getattr(payload, "type", None) or "boutique"
 
+    # Vérification préalable de marque protégée sur le nom ou le slug
+    is_blocked, brand_reason = check_brand_blocklist(payload.name)
+    if is_blocked:
+        raise HTTPException(status_code=400, detail=brand_reason)
+
     # Détermination du slug de base :
     # Si payload.slug est renseigné explicitement, on le normalise et vérifie strictement.
     # Sinon, on dérive le slug depuis payload.name.
     if payload.slug and payload.slug.strip():
+        is_blocked, brand_reason = check_brand_blocklist(payload.slug.strip())
+        if is_blocked:
+            raise HTTPException(status_code=400, detail=brand_reason)
+
         base_slug = normalize_slug(payload.slug.strip(), store_type)
+        is_blocked, brand_reason = check_brand_blocklist(base_slug)
+        if is_blocked:
+            raise HTTPException(status_code=400, detail=brand_reason)
+
         if is_slug_reserved(base_slug):
             raise HTTPException(
                 status_code=400,
@@ -186,6 +209,9 @@ async def create_store(
             raise HTTPException(status_code=400, detail=reason)
     else:
         base_slug = normalize_slug(payload.name, store_type)
+        is_blocked, brand_reason = check_brand_blocklist(base_slug)
+        if is_blocked:
+            raise HTTPException(status_code=400, detail=brand_reason)
         if is_slug_reserved(base_slug):
             base_slug = f"{base_slug}-1"
 

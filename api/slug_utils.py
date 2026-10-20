@@ -120,6 +120,74 @@ RESERVED_SLUGS: set[str] = {
     "edahabia",
 }
 
+PROTECTED_BRANDS: list[str] = [
+    "apple",
+    "adidas",
+    "nike",
+    "puma",
+    "gucci",
+    "louisvuitton",
+    "chanel",
+    "samsung",
+    "huawei",
+    "xiaomi",
+    "iphone",
+    "macbook",
+    "jordan",
+    "lacoste",
+    "zara",
+    "hm",
+    "shein",
+    "temu",
+    "dior",
+    "prada",
+    "rolex",
+    "balenciaga",
+    "versace",
+    "armani",
+    "hermes",
+    "burberry",
+    "cartier",
+    "sephora",
+    "bershka",
+    "pullandbear",
+    "stradivarius",
+]
+
+BRAND_REJECTION_MESSAGE = (
+    "Ce nom de boutique n'est pas disponible. Choisissez un nom qui ne reprend pas une marque existante."
+)
+
+
+def check_brand_blocklist(slug_or_name: str) -> Tuple[bool, Optional[str]]:
+    """
+    Vérifie si un nom ou slug de boutique reprend une marque protégée ou une de ses variations.
+    Retourne (True, BRAND_REJECTION_MESSAGE) si bloqué, sinon (False, None).
+    """
+    if not slug_or_name:
+        return False, None
+    raw = strip_accents(slug_or_name).lower()
+    clean = re.sub(r"[^a-z0-9]", "", raw)
+    tokens = [t for t in re.split(r"[^a-z0-9]+", raw) if t]
+
+    for brand in PROTECTED_BRANDS:
+        b_clean = re.sub(r"[^a-z0-9]", "", brand.lower())
+        if len(b_clean) <= 2:
+            if (
+                clean == b_clean
+                or b_clean in tokens
+                or clean.startswith(b_clean)
+                or clean.endswith(b_clean)
+                or clean == "handm"
+            ):
+                return True, BRAND_REJECTION_MESSAGE
+        else:
+            if b_clean in clean:
+                return True, BRAND_REJECTION_MESSAGE
+
+    return False, None
+
+
 TEST_SANDBOX_SLUGS: set[str] = {
     "jjj",
     "sss",
@@ -128,6 +196,7 @@ TEST_SANDBOX_SLUGS: set[str] = {
     "eee",
     "qa",
     "eeee05",
+    "eeeee05",
     "test",
     "sandbox",
     "dev",
@@ -209,8 +278,12 @@ def normalize_slug(text: str, store_type: str = "boutique") -> str:
 
 
 def is_slug_reserved(slug: str) -> bool:
-    """Vérifie si un slug correspond à un mot système réservé."""
-    return slug.strip().lower() in RESERVED_SLUGS
+    """Vérifie si un slug correspond à un mot système réservé ou une marque protégée."""
+    if not slug:
+        return False
+    clean = slug.strip().lower()
+    is_blocked, _ = check_brand_blocklist(clean)
+    return clean in RESERVED_SLUGS or is_blocked
 
 
 def validate_slug_format(slug: str) -> Tuple[bool, Optional[str]]:

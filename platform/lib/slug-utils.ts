@@ -116,6 +116,90 @@ export const RESERVED_SLUGS = new Set<string>([
 ]);
 
 /**
+ * Blocklist de marques protégées (interdites sous toute forme ou variation).
+ */
+export const PROTECTED_BRANDS: string[] = [
+  "apple",
+  "adidas",
+  "nike",
+  "puma",
+  "gucci",
+  "louisvuitton",
+  "chanel",
+  "samsung",
+  "huawei",
+  "xiaomi",
+  "iphone",
+  "macbook",
+  "jordan",
+  "lacoste",
+  "zara",
+  "hm",
+  "shein",
+  "temu",
+  "dior",
+  "prada",
+  "rolex",
+  "balenciaga",
+  "versace",
+  "armani",
+  "hermes",
+  "burberry",
+  "cartier",
+  "sephora",
+  "bershka",
+  "pullandbear",
+  "stradivarius",
+];
+
+export const BRAND_REJECTION_MESSAGE =
+  "Ce nom de boutique n'est pas disponible. Choisissez un nom qui ne reprend pas une marque existante.";
+
+/**
+ * Vérifie si un slug ou un nom de boutique reprend une marque protégée ou une variation.
+ * Teste la chaîne en minuscules sans tirets et par tokens.
+ */
+export function checkBrandBlocklist(slugOrName: string): {
+  isBlocked: boolean;
+  brand?: string;
+  reason?: string;
+} {
+  if (!slugOrName) return { isBlocked: false };
+  const raw = stripAccents(slugOrName).toLowerCase();
+  const clean = raw.replace(/[^a-z0-9]/g, "");
+  const tokens = raw.split(/[^a-z0-9]+/).filter(Boolean);
+
+  for (const brand of PROTECTED_BRANDS) {
+    const brandClean = brand.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (brandClean.length <= 2) {
+      if (
+        clean === brandClean ||
+        tokens.includes(brandClean) ||
+        clean.startsWith(brandClean) ||
+        clean.endsWith(brandClean) ||
+        clean === "handm"
+      ) {
+        return {
+          isBlocked: true,
+          brand,
+          reason: BRAND_REJECTION_MESSAGE,
+        };
+      }
+    } else {
+      if (clean.includes(brandClean)) {
+        return {
+          isBlocked: true,
+          brand,
+          reason: BRAND_REJECTION_MESSAGE,
+        };
+      }
+    }
+  }
+
+  return { isBlocked: false };
+}
+
+/**
  * Slugs réservés aux tests internes, sandbox ou vérifications techniques
  * Ces boutiques doivent être automatiquement exclues de l'indexation (noindex) et du sitemap.
  */
@@ -127,6 +211,7 @@ export const TEST_SANDBOX_SLUGS = new Set<string>([
   "eee",
   "qa",
   "eeee05",
+  "eeeee05",
   "test",
   "sandbox",
   "dev",
@@ -193,7 +278,9 @@ export function normalizeSlug(text: string, storeType: string = "boutique"): str
 }
 
 export function isSlugReserved(slug: string): boolean {
-  return RESERVED_SLUGS.has((slug || "").trim().toLowerCase());
+  if (!slug) return false;
+  const clean = slug.trim().toLowerCase();
+  return RESERVED_SLUGS.has(clean) || checkBrandBlocklist(clean).isBlocked;
 }
 
 export function validateSlugFormat(slug: string): { isValid: boolean; reason?: string } {
