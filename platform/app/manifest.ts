@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "EasyTradez — Plateforme E-Commerce Algérie",
     short_name: "EasyTradez",
-    description: "Créez votre boutique en ligne en 5 minutes avec paiement à la livraison (COD) et expédition 58 wilayas.",
+    description: "Créez votre boutique en ligne en 5 minutes avec paiement à la livraison (COD) et expédition partout en Algérie.",
     start_url: "/",
     display: "standalone",
     background_color: "#06060f",

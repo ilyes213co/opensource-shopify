@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
-import WhatsAppSupportButton from "@/components/landing/WhatsAppSupportButton";
 import Providers from "@/components/providers";
 import "./globals.css";
 import "@/styles/themes/index.css";
@@ -11,7 +10,7 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://easytradez.site";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "EasyTradez — Créez votre Boutique en Ligne en Algérie | COD & 58 Wilayas",
+    default: "EasyTradez — Créez votre Boutique en Ligne en Algérie | Paiement COD",
     template: "%s | EasyTradez Algérie",
   },
   description:
@@ -24,7 +23,7 @@ export const metadata: Metadata = {
     "créer boutique en ligne algérie",
     "shopify algérie",
     "e-commerce algérie",
-    "boutique en ligne 58 wilayas",
+    "boutique en ligne algérie",
     "paiement à la livraison algérie",
     "yalidine express",
     "zr express",
@@ -52,12 +51,12 @@ export const metadata: Metadata = {
     siteName: "EasyTradez",
     title: "EasyTradez — Créer votre Boutique en Ligne en Algérie",
     description:
-      "EasyTradez : Votre boutique e-commerce professionnelle en 5 minutes. Paiement à la livraison (COD), expédition 58 wilayas, Yalidine & BaridiMob.",
+      "EasyTradez : Votre boutique e-commerce professionnelle en 5 minutes. Paiement à la livraison (COD), expédition nationale avec Yalidine & BaridiMob.",
   },
   twitter: {
     card: "summary_large_image",
     title: "EasyTradez — Plateforme E-Commerce Algérie",
-    description: "EasyTradez : Créez votre boutique en ligne en 5 minutes. 58 wilayas, COD et IA.",
+    description: "EasyTradez : Créez votre boutique en ligne en 5 minutes. Paiement à la livraison (COD) et gestion en DZD.",
   },
   robots: {
     index: true,
@@ -146,7 +145,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-bg text-ink font-sans antialiased selection:bg-brand selection:text-white transition-colors duration-200">
         <Providers>{children}</Providers>
-        <WhatsAppSupportButton />
         <Toaster
           position="top-right"
           toastOptions={{

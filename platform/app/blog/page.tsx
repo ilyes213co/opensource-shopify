@@ -31,7 +31,7 @@ const ARTICLES: Article[] = [
     keyPoints: [
       "Pourquoi le modèle mono-produit (tunnel) cartonne sur TikTok DZ",
       "Éviter les erreurs classiques : zéro carte de crédit internationale requise",
-      "Configurer les tarifs de livraison domicile et stop-desk pour les 58 wilayas",
+      "Configurer les tarifs de livraison domicile et stop-desk pour vos clients",
       "Le premier jour de vente : ce qu'il faut préparer avant de lancer",
     ],
   },
@@ -220,7 +220,7 @@ export default function BlogIndexPage() {
             Vous avez des questions sur la vente en ligne en Algérie ?
           </h2>
           <p className="text-sm text-white/70 max-w-xl mx-auto">
-            Notre équipe vous accompagne gratuitement pour configurer votre première boutique et vos tarifs de livraison 58 wilayas.
+            Notre équipe vous accompagne gratuitement pour configurer votre première boutique et vos tarifs de livraison.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -230,10 +230,10 @@ export default function BlogIndexPage() {
               <span>Créer ma boutique gratuite</span>
             </Link>
             <Link
-              href="/demo"
+              href="/pricing"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm bg-white/10 hover:bg-white/20 text-white transition-colors"
             >
-              <span>Voir les boutiques démo</span>
+              <span>Consulter les forfaits</span>
             </Link>
           </div>
         </div>

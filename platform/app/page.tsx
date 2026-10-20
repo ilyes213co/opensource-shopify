@@ -6,7 +6,7 @@ import { safeJsonLd } from "@/lib/json-ld";
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://easytradez.site";
 
 export const metadata: Metadata = {
-  title: "EasyTradez — Créez votre Boutique & Funnel en Ligne en Algérie (58 Wilayas)",
+  title: "EasyTradez — Créez votre Boutique & Funnel en Ligne en Algérie",
   description:
     "Plateforme e-commerce algérienne pour marchands et créateurs. Lancez votre boutique ou tunnel de vente en 5 minutes avec paiement à la livraison (COD), intégration Yalidine & ZR Express, et comptabilité en DZD.",
   alternates: {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     alternateLocale: ["ar_DZ"],
     url: siteUrl,
     siteName: "EasyTradez",
-    title: "EasyTradez — Créez votre Boutique en Ligne en Algérie | COD & 58 Wilayas",
+    title: "EasyTradez — Créez votre Boutique en Ligne en Algérie | Paiement COD",
     description:
       "Vendez partout en Algérie avec EasyTradez. Boutiques mobiles ultra-rapides, paiement à la livraison sécurisé, intégration Yalidine, ZR Express et BaridiMob.",
     images: [
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "EasyTradez — Créez votre Boutique en Ligne en Algérie",
     description:
-      "Lancez votre boutique e-commerce en 5 minutes. Paiement à la livraison 58 wilayas, Yalidine et zéro frais cachés.",
+      "Lancez votre boutique e-commerce en 5 minutes. Paiement à la livraison, transporteurs intégrés et zéro frais cachés.",
     images: [`${siteUrl}/icon.svg`],
   },
 };
@@ -55,7 +55,7 @@ export default function HomePage() {
         url: siteUrl,
         logo: `${siteUrl}/icon.svg`,
         description:
-          "Plateforme SaaS e-commerce pour créateurs et marchands en Algérie. Vente en ligne, paiement à la livraison (COD) et logistique 58 wilayas.",
+          "Plateforme SaaS e-commerce pour créateurs et marchands en Algérie. Vente en ligne, paiement à la livraison (COD) et intégration transporteurs.",
         address: {
           "@type": "PostalAddress",
           addressCountry: "DZ",

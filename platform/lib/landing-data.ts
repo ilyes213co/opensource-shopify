@@ -1,6 +1,6 @@
 export const TICKER_ITEMS = [
   "Paiement à la livraison (COD)",
-  "Algérie · 58 Wilayas",
+  "Livraison partout en Algérie",
   "Yalidine Express & ZR Express",
   "Comptabilité en DZD",
   "0% de commission sur vos ventes",
@@ -26,9 +26,9 @@ export const FEATURES = [
   },
   {
     num: "03",
-    title: "58 Wilayas & Tarifs personnalisés",
-    body: "Définissez vos tarifs de livraison à domicile et stop-desk pour chaque wilaya, ou appliquez un tarif standardisé en un seul clic.",
-    tag: "58 Wilayas",
+    title: "Tarifs de livraison personnalisés",
+    body: "Définissez vos tarifs de livraison à domicile et stop-desk selon les destinations, ou appliquez un tarif standardisé en un seul clic.",
+    tag: "Livraison flexible",
   },
   {
     num: "04",
@@ -52,14 +52,8 @@ export const FEATURES = [
 
 export const TRUST_METRICS = [
   {
-    value: "58",
-    suffix: " Wilayas",
-    label: "Couverture nationale",
-    detail: "Tarifs domicile et stop-desk configurables pour toute l'Algérie",
-  },
-  {
-    value: "COD",
-    suffix: "",
+    value: "100%",
+    suffix: " COD",
     label: "Paiement à la livraison",
     detail: "Vos acheteurs règlent en espèces sans carte bancaire",
   },
@@ -75,10 +69,16 @@ export const TRUST_METRICS = [
     label: "Pour démarrer",
     detail: "Forfait gratuit actif immédiatement sans engagement",
   },
+  {
+    value: "5",
+    suffix: " min",
+    label: "Mise en ligne rapide",
+    detail: "Votre boutique prête immédiatement avec son adresse sécurisée",
+  },
 ];
 
 export const STATS = TRUST_METRICS.map((m) => ({
-  target: m.value === "58" ? 58 : m.value === "0" ? 0 : 100,
+  target: m.value === "0" ? 0 : 100,
   suffix: m.suffix,
   label: m.label,
   valueText: m.value,
@@ -112,7 +112,7 @@ export const FAQ_QUESTIONS = [
   {
     question: "Comment mes clients finaux règlent-ils leurs achats ?",
     answer:
-      "En Algérie, le standard absolu est le paiement à la livraison (Cash on Delivery / COD). Vos clients n'ont besoin d'aucune carte bancaire : ils saisissent simplement leur nom, téléphone et wilaya sur votre formulaire, puis règlent le montant de la commande en espèces lors de la remise du colis par le livreur.",
+      "En Algérie, le standard absolu est le paiement à la livraison (Cash on Delivery / COD). Vos clients n'ont besoin d'aucune carte bancaire : ils saisissent simplement leur nom, téléphone et adresse sur votre formulaire, puis règlent le montant de la commande en espèces lors de la remise du colis par le livreur.",
   },
   {
     question: "Qui paie par carte et qui paie en espèces ?",
@@ -122,7 +122,7 @@ export const FAQ_QUESTIONS = [
   {
     question: "Puis-je expédier avec Yalidine Express, ZR Express ou Procolis ?",
     answer:
-      "Oui. Vous pouvez renseigner vos tarifs de livraison pour chaque wilaya (domicile et stop-desk) et générer des bordereaux de livraison prêts à imprimer avec le montant exact à encaisser. Vous restez totalement libre de travailler avec le transporteur de votre choix en Algérie.",
+      "Oui. Vous pouvez renseigner vos tarifs de livraison (domicile et stop-desk) et générer des bordereaux de livraison prêts à imprimer avec le montant exact à encaisser. Vous restez totalement libre de travailler avec le transporteur de votre choix en Algérie.",
   },
   {
     question: "Comment limiter les colis refusés ou retours (retour COD) ?",
@@ -152,7 +152,7 @@ export const FAQ_QUESTIONS = [
   {
     question: "Comment contacter l'équipe d'assistance en cas de besoin ?",
     answer:
-      "Notre équipe est basée en Algérie et répond directement en arabe algérien (Darija) et en français. Vous pouvez nous joindre par WhatsApp grâce au bouton présent en bas de chaque page ou par e-mail à support@easytradez.site.",
+      "Notre équipe est basée en Algérie et répond directement en arabe algérien (Darija) et en français par e-mail à support@easytradez.site.",
   },
 ];
 
@@ -185,7 +185,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       "1 Boutique active",
       "Jusqu'à 10 produits",
       "4 Thèmes standards personnalisables",
-      "Paiement à la livraison (COD) 58 wilayas",
+      "Paiement à la livraison (COD) partout en Algérie",
       "Gestion des commandes & bordereaux",
       "Analytiques sur 7 jours",
       "Hébergement rapide et sécurisé (SSL inclus)",
@@ -209,9 +209,9 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Tous les 10 Thèmes Premium débloqués",
       "Génération IA illimitée (descriptions & textes)",
       "Sous-domaine dédié & Domaine personnalisé (.dz, .com)",
-      "Tarifs 58 wilayas modifiables en masse (1 clic)",
+      "Tarifs de livraison modifiables en masse (1 clic)",
       "Comparateur de tunnels & Analytiques complètes",
-      "Support prioritaire WhatsApp 7j/7",
+      "Support prioritaire 7j/7",
     ],
     cta: "Choisir le forfait Pro",
     href: "/register?plan=pro",
@@ -238,4 +238,3 @@ export const PRICING_PLANS: PricingPlan[] = [
     href: "/register?plan=business",
   },
 ];
-

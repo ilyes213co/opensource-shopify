@@ -74,7 +74,7 @@ export default function AboutPage() {
           </div>
 
           <p className="text-sm sm:text-base text-white/80 leading-relaxed">
-            Pendant des années, les vendeurs en Algérie ont dû se battre avec des solutions inadaptées : devoir chercher des cartes bancaires internationales au marché noir pour payer des abonnements mensuels en devises (Shopify, Wix), des plateformes qui ignorent le paiement à la livraison (COD) et qui ne savent pas gérer les 58 wilayas d&apos;Algérie.
+            Pendant des années, les vendeurs en Algérie ont dû se battre avec des solutions inadaptées : devoir chercher des cartes bancaires internationales au marché noir pour payer des abonnements mensuels en devises (Shopify, Wix), des plateformes qui ignorent le paiement à la livraison (COD) et qui ne sont pas adaptées au marché algérien.
           </p>
 
           <p className="text-sm sm:text-base text-white/80 leading-relaxed">
@@ -165,9 +165,9 @@ export default function AboutPage() {
             </div>
 
             <div className="space-y-1">
-              <span className="text-white/40 uppercase font-semibold">Support WhatsApp</span>
-              <p className="font-bold text-emerald-400">Disponible 7j/7</p>
-              <p className="text-white/60">Assistance en Darija et Français</p>
+              <span className="text-white/40 uppercase font-semibold">Assistance Directe</span>
+              <p className="font-bold text-white">support@easytradez.site</p>
+              <p className="text-white/60">Équipe dédiée à votre écoute</p>
             </div>
           </div>
         </section>

@@ -4,18 +4,15 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
-  ChevronDown,
   Plus,
   Minus,
   Check,
   Sparkles,
-  ExternalLink,
   ShieldCheck,
-  ShoppingBag,
-  Eye,
   CreditCard,
   Banknote,
   CheckCircle2,
+  Mail,
 } from "lucide-react";
 import EasyTradeLogo from "@/components/brand/EasyTradeLogo";
 import ThreeAmbientScene from "@/components/brand/ThreeAmbientScene";
@@ -56,16 +53,13 @@ export default function LandingClient() {
         <EasyTradeLogo size={34} href="/" />
 
         {/* Center links */}
-        <div className="hidden lg:flex items-center gap-7 text-sm font-semibold text-white/70">
+        <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-white/70">
           <a href="#how-it-works" className="hover:text-white transition-colors duration-200">
             Comment ça marche
           </a>
           <a href="#features" className="hover:text-white transition-colors duration-200">
             Fonctionnalités
           </a>
-          <Link href="/demo" className="hover:text-white transition-colors duration-200">
-            Boutiques Démo
-          </Link>
           <Link href="/pricing" className="hover:text-white transition-colors duration-200">
             Tarifs
           </Link>
@@ -107,7 +101,7 @@ export default function LandingClient() {
       {/* ── HERO SECTION ── */}
       <section
         id="hero"
-        className="relative min-h-[86vh] flex items-center justify-center text-center px-4 pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden"
+        className="relative min-h-[84vh] flex items-center justify-center text-center px-4 pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden"
       >
         {/* Three.js 3D interactive ambient canvas */}
         <ThreeAmbientScene opacity={0.88} interactive={true} />
@@ -164,15 +158,15 @@ export default function LandingClient() {
 
           {/* Hero Subtitle */}
           <p className="text-base sm:text-xl text-white/75 max-w-2xl mx-auto leading-relaxed">
-            Créez votre boutique ou tunnel mono-produit sans carte bancaire internationale. Encaissez en espèces à la livraison (COD) dans les 58 wilayas avec Yalidine, ZR Express et Procolis.
+            Créez votre boutique ou tunnel mono-produit sans carte bancaire internationale. Encaissez en espèces à la livraison (COD) partout en Algérie avec Yalidine, ZR Express et Procolis.
           </p>
 
           {/* CTAs */}
           <div className="pt-2 space-y-3">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex items-center justify-center">
               <Link
                 href="/register"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl font-bold text-base text-white shadow-2xl transition-all duration-200 hover:-translate-y-1 hover:brightness-110"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-9 py-4 rounded-2xl font-bold text-base text-white shadow-2xl transition-all duration-200 hover:-translate-y-1 hover:brightness-110"
                 style={{
                   background:
                     "linear-gradient(135deg, var(--g, #2540ea) 0%, var(--gd, #1a2ca3) 100%)",
@@ -182,20 +176,6 @@ export default function LandingClient() {
               >
                 <span>Créer ma boutique gratuite</span>
                 <ArrowRight className="w-5 h-5" />
-              </Link>
-
-              <Link
-                href="/demo"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-semibold text-base text-white transition-all duration-200 hover:-translate-y-0.5"
-                style={{
-                  background: "rgba(10, 14, 38, 0.75)",
-                  border: "1px solid var(--border, rgba(96, 165, 250, 0.4))",
-                  backdropFilter: "blur(16px)",
-                  boxShadow: "0 12px 32px -8px rgba(0, 0, 0, 0.6)",
-                }}
-              >
-                <span>Voir les boutiques démo</span>
-                <ChevronDown className="w-4 h-4 text-white/70" />
               </Link>
             </div>
 
@@ -435,132 +415,6 @@ export default function LandingClient() {
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ── DEMO STORES SECTION PREVIEW ── */}
-      <section id="demo" className="py-20 px-6 md:px-12 max-w-7xl mx-auto relative z-10">
-        <div className="space-y-3 mb-12 text-center">
-          <span
-            className="text-xs font-black uppercase tracking-[3px]"
-            style={{
-              color: "var(--gl, #93c5fd)",
-              textShadow: "0 0 16px var(--g-glow, rgba(37, 64, 234, 0.6))",
-            }}
-          >
-            Exemples Concrets
-          </span>
-          <h2
-            className="text-3xl md:text-5xl font-black text-white tracking-tight"
-            style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
-          >
-            Boutiques et tunnels en action
-          </h2>
-          <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto">
-            Découvrez des configurations réelles adaptées aux secteurs les plus dynamiques du commerce en ligne algérien.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Demo 1 : Cosmétiques */}
-          <div
-            className="rounded-3xl p-6 border space-y-4 flex flex-col justify-between"
-            style={{
-              background: "linear-gradient(155deg, rgba(28, 44, 148, 0.25) 0%, rgba(10, 14, 38, 0.85) 100%)",
-              borderColor: "rgba(96, 165, 250, 0.28)",
-            }}
-          >
-            <div className="space-y-3">
-              <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#9d4edd]/20 text-[#e0aaff] border border-[#9d4edd]/30">
-                Cosmétique &amp; Soins
-              </span>
-              <h3 className="text-xl font-bold text-white">Botanica DZ</h3>
-              <p className="text-xs text-white/70 leading-relaxed">
-                Soins artisanaux (huile de figue de barbarie, eau florale). Formulaire COD épuré optimisé pour le trafic Instagram.
-              </p>
-              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-white/70 space-y-1">
-                <div>✓ Calcul livraison domicile / stop-desk</div>
-                <div>✓ Bordereau Yalidine prêt à imprimer</div>
-              </div>
-            </div>
-            <Link
-              href="/demo"
-              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-sky-400 hover:text-sky-300 py-2 transition-colors"
-            >
-              <span>Voir la démo complète</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Demo 2 : Mode */}
-          <div
-            className="rounded-3xl p-6 border space-y-4 flex flex-col justify-between"
-            style={{
-              background: "linear-gradient(155deg, rgba(28, 44, 148, 0.25) 0%, rgba(10, 14, 38, 0.85) 100%)",
-              borderColor: "rgba(96, 165, 250, 0.28)",
-            }}
-          >
-            <div className="space-y-3">
-              <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white border border-white/30">
-                Mode &amp; Streetwear
-              </span>
-              <h3 className="text-xl font-bold text-white">DzStreetwear</h3>
-              <p className="text-xs text-white/70 leading-relaxed">
-                Coupes oversize et hoodies lourds. Sélecteur de tailles (S à XXL) et commande en 2 clics pour les acheteurs TikTok.
-              </p>
-              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-white/70 space-y-1">
-                <div>✓ Sélecteur de tailles et couleurs</div>
-                <div>✓ Expédition ZR Express 58 wilayas</div>
-              </div>
-            </div>
-            <Link
-              href="/demo"
-              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-sky-400 hover:text-sky-300 py-2 transition-colors"
-            >
-              <span>Voir la démo complète</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Demo 3 : Tech */}
-          <div
-            className="rounded-3xl p-6 border space-y-4 flex flex-col justify-between"
-            style={{
-              background: "linear-gradient(155deg, rgba(28, 44, 148, 0.25) 0%, rgba(10, 14, 38, 0.85) 100%)",
-              borderColor: "rgba(96, 165, 250, 0.28)",
-            }}
-          >
-            <div className="space-y-3">
-              <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#00f0ff]/20 text-[#a5f3fc] border border-[#00f0ff]/30">
-                High-Tech &amp; Audio
-              </span>
-              <h3 className="text-xl font-bold text-white">TechVolt Algérie</h3>
-              <p className="text-xs text-white/70 leading-relaxed">
-                Écouteurs TWS et chargeurs rapides GaN. Fiches techniques complètes et réassurance sur la garantie de fonctionnement.
-              </p>
-              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-white/70 space-y-1">
-                <div>✓ Fiche technique structurée</div>
-                <div>✓ Emballage antichoc &amp; Procolis</div>
-              </div>
-            </div>
-            <Link
-              href="/demo"
-              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-sky-400 hover:text-sky-300 py-2 transition-colors"
-            >
-              <span>Voir la démo complète</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="text-center pt-8">
-          <Link
-            href="/demo"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/15 text-white border border-white/20 transition-all"
-          >
-            <span>Explorer la page démo détaillée</span>
-            <ExternalLink className="w-4 h-4" />
-          </Link>
         </div>
       </section>
 
@@ -826,7 +680,7 @@ export default function LandingClient() {
             <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
               <h3 className="font-bold text-white text-sm">Équipe Basée en Algérie</h3>
               <p className="text-xs text-white/70 leading-relaxed">
-                Notre équipe technique et support est basée à Oran. Nous parlons votre langue (Darija &amp; Français) et comprenons les blocages locaux.
+                Notre équipe technique et support est basée à Oran. Nous parlons votre langue (Darija &amp; Français) et comprenons les réalités locales.
               </p>
             </div>
 
@@ -974,7 +828,7 @@ export default function LandingClient() {
         </div>
       </section>
 
-      {/* ── COMPREHENSIVE TRUST FOOTER ── */}
+      {/* ── COMPREHENSIVE TRUST FOOTER WITH CLEAR PROFESSIONAL EMAIL ── */}
       <footer
         className="py-14 px-6 md:px-12 border-t text-center space-y-6 relative z-10"
         style={{
@@ -992,8 +846,16 @@ export default function LandingClient() {
               </span>
             </div>
 
-            <div className="text-xs text-white/60">
-              Support direct : <a href="mailto:support@easytradez.site" className="text-sky-400 hover:underline">support@easytradez.site</a>
+            {/* Prominent professional email address */}
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-white/80">
+              <Mail className="w-4 h-4 text-sky-400" />
+              <span>Contact &amp; Assistance :</span>
+              <a
+                href="mailto:support@easytradez.site"
+                className="text-sky-400 hover:text-sky-300 font-bold underline transition-colors"
+              >
+                support@easytradez.site
+              </a>
             </div>
           </div>
 
@@ -1012,9 +874,6 @@ export default function LandingClient() {
             <Link href="/pricing" className="hover:text-white transition-colors">
               Tarifs
             </Link>
-            <Link href="/demo" className="hover:text-white transition-colors">
-              Boutiques Démo
-            </Link>
             <Link href="/about" className="hover:text-white transition-colors">
               À Propos
             </Link>
@@ -1030,7 +889,7 @@ export default function LandingClient() {
             <Link href="/login" className="hover:text-white transition-colors">
               Connexion Marchand
             </Link>
-            <Link href="/register" className="hover:text-white transition-colors text-sky-400">
+            <Link href="/register" className="hover:text-white transition-colors text-sky-400 font-bold">
               Inscription Gratuite
             </Link>
           </div>
