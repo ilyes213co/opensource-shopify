@@ -215,10 +215,13 @@ export async function POST(req: NextRequest) {
       theme: body.theme || "crimson",
       animation_style: body.animation_style || "soft",
       type: storeType,
-      status: "published",
+      status: body.status || "published",
       category: body.category || null,
       font_family: body.font_family || "modern",
       logo_url: body.logo_url || null,
+      currency: body.currency || "DZD",
+      city: body.city || null,
+      country: body.country || "DZ",
       seo_metadata: seoMetadata,
       content_overrides: contentOverrides,
     };
@@ -242,6 +245,18 @@ export async function POST(req: NextRequest) {
         console.warn(`[POST /api/stores] Collision 23505 pour '${candidateSlug}' (tentative ${attempt + 1}/${maxAttempts})`);
         lastError = error;
         continue;
+      }
+
+      if (error?.message?.includes("PLAN_LIMIT_REACHED")) {
+        return NextResponse.json(
+          {
+            detail: "PLAN_LIMIT_REACHED",
+            code: "PLAN_LIMIT_REACHED",
+            message: "Limite atteinte : votre forfait ne vous permet pas de créer de boutique supplémentaire. Passez à un forfait supérieur pour débloquer plus de boutiques.",
+            limit_type: "stores",
+          },
+          { status: 403 }
+        );
       }
 
       console.error("Supabase insert store error:", error);

@@ -243,8 +243,12 @@ async def create_product(
     elif current_stock is None:
         data["stock_quantity"] = 0
 
-    status_val = payload.status.value if hasattr(payload.status, "value") else str(payload.status)
-    status_clean = str(status_val).lower().strip()
+    status_raw = getattr(payload, "status", None)
+    if status_raw is not None:
+        status_val = status_raw.value if hasattr(status_raw, "value") else str(status_raw)
+        status_clean = str(status_val).lower().strip()
+    else:
+        status_clean = "active"
     if status_clean not in ("active", "draft", "archived"):
         status_clean = "active"
     data["status"] = status_clean
@@ -257,6 +261,16 @@ async def create_product(
         res = safe_insert("products", data, supabase)
     except Exception as e:
         err_msg = str(e)
+        if "PLAN_LIMIT_REACHED" in err_msg:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "detail": "PLAN_LIMIT_REACHED",
+                    "code": "PLAN_LIMIT_REACHED",
+                    "message": "Limite de produits atteinte pour votre forfait (max: 10 produits). Passez au forfait Pro ou Business pour ajouter des produits en illimité.",
+                    "limit_type": "products",
+                },
+            )
         logger.error(f"Error on product insert: {err_msg}")
         raise HTTPException(status_code=500, detail=f"Erreur Supabase: {err_msg}")
 

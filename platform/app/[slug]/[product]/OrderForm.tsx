@@ -308,46 +308,9 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
         }
         setConfirmedTotal(serverConfirmedTotal);
       } else {
-        // Si rejeté par la sécurité (erreur 400 ou 403), afficher le message exact du serveur
-        if (res && (res.status === 400 || res.status === 403)) {
-          setServerError(data?.error || data?.detail || "Numéro ou commande non autorisée");
-          setLoading(false);
-          return;
-        }
-
-        // 2. Fallback: insertion directe Supabase sans .select() (car RLS restreint select pour anon)
-        const { error } = await supabase
-          .from("orders")
-          .insert({
-            store_id:         store.id,
-            customer_name:    form.name.trim(),
-            customer_phone:   cleanedPhone || form.phone.trim(),
-            customer_address: fullAddress,
-            notes:            form.notes.trim() || null,
-            items: [
-              {
-                product_id: product.id,
-                name:       product.name,
-                price:      product.price,
-                quantity:   qty,
-                image:      product.images[0] ?? null,
-                options_selected: selectedOptions,
-              },
-            ],
-            subtotal: subtotal,
-            total:    total,
-            total_amount: total,
-            shipping_address: fullAddress,
-            status:         "pending",
-            payment_status: "pending",
-          } as any);
-
-        if (error) {
-          console.error("Supabase direct insert error:", error);
-          setServerError("Erreur lors de l'envoi. Veuillez réessayer.");
-          setLoading(false);
-          return;
-        }
+        setServerError(data?.error || data?.detail || "Erreur lors de l'enregistrement de la commande. Veuillez réessayer.");
+        setLoading(false);
+        return;
       }
     } catch (err: any) {
       console.error("Order submit error:", err);

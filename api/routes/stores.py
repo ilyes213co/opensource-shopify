@@ -246,6 +246,16 @@ async def create_store(
                     last_error = err_dict
                     continue
                 error_msg = err_dict.get("message", "")
+                if "PLAN_LIMIT_REACHED" in error_msg:
+                    raise HTTPException(
+                        status_code=403,
+                        detail={
+                            "detail": "PLAN_LIMIT_REACHED",
+                            "code": "PLAN_LIMIT_REACHED",
+                            "message": "Limite atteinte : votre forfait ne vous permet pas de créer de boutique supplémentaire. Passez à un forfait supérieur pour débloquer plus de boutiques.",
+                            "limit_type": "stores",
+                        },
+                    )
                 raise HTTPException(status_code=500, detail=f"Erreur Supabase: {error_msg}")
 
             if result and result.data:
@@ -265,6 +275,16 @@ async def create_store(
                 last_error = exc
                 continue
             error_str = str(exc)
+            if "PLAN_LIMIT_REACHED" in error_str:
+                raise HTTPException(
+                    status_code=403,
+                    detail={
+                        "detail": "PLAN_LIMIT_REACHED",
+                        "code": "PLAN_LIMIT_REACHED",
+                        "message": "Limite atteinte : votre forfait ne vous permet pas de créer de boutique supplémentaire. Passez à un forfait supérieur pour débloquer plus de boutiques.",
+                        "limit_type": "stores",
+                    },
+                )
             logger.error(f"Unexpected error creating store: {error_str}")
             raise HTTPException(status_code=500, detail=f"Erreur interne: {error_str}")
 

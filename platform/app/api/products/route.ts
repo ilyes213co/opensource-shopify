@@ -144,6 +144,17 @@ export async function POST(req: NextRequest) {
     const { data: created, error } = await safeInsert("products", productData, admin);
 
     if (error) {
+      if (error?.message?.includes("PLAN_LIMIT_REACHED")) {
+        return NextResponse.json(
+          {
+            detail: "PLAN_LIMIT_REACHED",
+            code: "PLAN_LIMIT_REACHED",
+            message: "Limite de produits atteinte pour votre forfait (max: 10 produits). Passez au forfait Pro ou Business pour ajouter des produits en illimité.",
+            limit_type: "products",
+          },
+          { status: 403 }
+        );
+      }
       console.error("Create product error:", error);
       return NextResponse.json({ detail: `Erreur Supabase: ${error.message}` }, { status: 500 });
     }

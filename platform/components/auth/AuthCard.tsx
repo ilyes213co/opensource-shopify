@@ -252,7 +252,6 @@ function AuthCardContent({ initialMode = "login" }: AuthCardProps) {
           id: data.user.id,
           full_name: fullName.trim() || data.user.user_metadata?.full_name || null,
           phone: cleanPhone || data.user.user_metadata?.phone || null,
-          plan: "free",
         });
       }
 
@@ -350,7 +349,6 @@ function AuthCardContent({ initialMode = "login" }: AuthCardProps) {
           id: data.user.id,
           full_name: fullName.trim(),
           phone: cleanPhone || null,
-          plan: "free",
         });
       }
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getAdminClient } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,8 @@ export async function GET(request: Request) {
         const fullName = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split("@")[0] || "Marchand";
         const avatarUrl = u.user_metadata?.avatar_url || u.user_metadata?.picture || null;
         try {
-          await supabase.from("profiles").upsert(
+          const admin = getAdminClient();
+          await admin.from("profiles").upsert(
             {
               id: u.id,
               full_name: fullName,

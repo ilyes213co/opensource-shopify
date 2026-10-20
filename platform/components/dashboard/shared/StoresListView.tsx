@@ -14,6 +14,7 @@ import {
 import type { Store as StoreType } from "@/types/database";
 import { useUserPlan } from "@/lib/use-user-plan";
 import UpgradeModal from "@/components/dashboard/UpgradeModal";
+import { storesApi } from "@/lib/api";
 
 interface StoreWithMetrics extends StoreType {
   productsCount: number;
@@ -172,12 +173,7 @@ export default function StoresListView({ type }: StoresListViewProps) {
     if (!storeToDelete) return;
     setIsDeleting(true);
     try {
-      const { error } = await supabase
-        .from("stores")
-        .delete()
-        .eq("id", storeToDelete.id);
-
-      if (error) throw error;
+      await storesApi.delete(storeToDelete.id);
 
       setStores(prev => prev.filter(s => s.id !== storeToDelete.id));
       setToastMessage({

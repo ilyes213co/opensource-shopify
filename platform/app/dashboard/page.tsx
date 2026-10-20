@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Store as StoreType } from "@/types/database";
+import { storesApi } from "@/lib/api";
 
 interface FunnelMetrics {
   totalOrders: number;
@@ -142,12 +143,7 @@ export default function DashboardPage() {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      const { error } = await supabase
-        .from("stores")
-        .delete()
-        .eq("id", deleteTarget.id);
-
-      if (error) throw error;
+      await storesApi.delete(deleteTarget.id);
 
       toast.success(`${isFunnel ? "Le funnel" : "La boutique"} "${deleteTarget.name}" a été supprimé(e)`);
       setStores((prev) => prev.filter((s) => s.id !== deleteTarget.id));

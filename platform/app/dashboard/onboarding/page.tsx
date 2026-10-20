@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 import type { Store } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { storesApi } from "@/lib/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -446,42 +447,35 @@ export default function OnboardingPage() {
     setServerError(null);
 
     try {
-      // 1. Create store (without logo first to get id)
-      const { data: store, error: storeError } = await supabase
-        .from("stores")
-        .insert({
-          owner_id: user.id,
-          name: s1.name.trim(),
-          slug: s1.slug,
-          whatsapp_phone: s3.whatsapp.trim() || null,
-          city: s3.city.trim() || null,
-          country: s3.country,
-          currency: s4.currency,
-          status: "inactive",
-        })
-        .select()
-        .single();
+      // 1. Create store via POST /api/stores (with plan limits, reserved slugs and slug normalization)
+      const createdStore = await storesApi.create({
+        name: s1.name.trim(),
+        slug: s1.slug,
+        whatsapp_phone: s3.whatsapp.trim() || null,
+        city: s3.city.trim() || null,
+        country: s3.country,
+        currency: s4.currency,
+        status: "inactive",
+      });
 
-      if (storeError || !store) throw new Error(storeError?.message || "Erreur de création");
-      const createdStore = store as unknown as Store;
+      if (!createdStore || !createdStore.id) throw new Error("Erreur de création de la boutique");
 
-      // 2. Upload logo if provided
+      // 2. Upload logo if provided and update via PATCH /api/stores/[id]
       if (s2.logoFile) {
         const logoUrl = await uploadLogo(createdStore.id);
         if (logoUrl) {
-          await supabase
-            .from("stores")
-            .update({ logo_url: logoUrl })
-            .eq("id", createdStore.id);
+          await storesApi.update(createdStore.id, { logo_url: logoUrl });
         }
       }
 
       // 3. Redirect to dashboard
       router.push("/dashboard");
-    } catch (err) {
-      setServerError(
-        err instanceof Error ? err.message : "Une erreur est survenue. Réessayez."
-      );
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        (err instanceof Error ? err.message : "Une erreur est survenue. Réessayez.");
+      setServerError(errorMsg);
       setSubmitting(false);
     }
   };
