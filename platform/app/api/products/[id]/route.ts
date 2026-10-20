@@ -12,7 +12,12 @@ async function verifyProductOwner(productId: string, userId: string, admin: any)
     return { ok: false as const, status: 404, message: "Produit introuvable", product: null };
   }
 
-  const storeOwnerId = product.stores?.owner_id;
+  const storesData = product.stores;
+  const storeOwnerId =
+    Array.isArray(storesData) && storesData.length > 0
+      ? storesData[0]?.owner_id
+      : storesData?.owner_id;
+
   if (storeOwnerId !== userId) {
     return { ok: false as const, status: 403, message: "Accès refusé", product: null };
   }

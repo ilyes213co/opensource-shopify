@@ -31,13 +31,20 @@ export async function DELETE(
       );
     }
 
-    const { error } = await admin
+    const { data: deleted, error } = await admin
       .from("store_members")
       .delete()
-      .eq("id", memberId);
+      .eq("id", memberId)
+      .eq("owner_id", user.id)
+      .select();
 
     if (error) {
       console.warn("Delete store_member error:", error);
+      return NextResponse.json({ detail: error.message }, { status: 500 });
+    }
+
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json({ detail: "Collaborateur introuvable ou accès refusé" }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });

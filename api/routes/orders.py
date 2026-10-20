@@ -1,17 +1,40 @@
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query, Request
 from typing import Optional, List, Any, Dict
 from pydantic import BaseModel, Field, field_validator
 import re
 import os
 import json
 import logging
+import time
 import urllib.request
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from dependencies import get_supabase, verify_token, check_store_owner
 
 
 router = APIRouter()
 logger = logging.getLogger("storegen.orders")
+
+
+class SlidingWindowLimiter:
+    """Limiteur de débit glissant en mémoire."""
+    def __init__(self, max_requests: int = 20, window_seconds: int = 600):
+        self.max_requests = max_requests
+        self.window_seconds = window_seconds
+        self.requests: dict[str, list[float]] = defaultdict(list)
+
+    def check(self, key: str) -> bool:
+        now = time.time()
+        cutoff = now - self.window_seconds
+        self.requests[key] = [t for t in self.requests[key] if t > cutoff]
+        if len(self.requests[key]) >= self.max_requests:
+            return False
+        self.requests[key].append(now)
+        return True
+
+
+order_ip_limiter = SlidingWindowLimiter(max_requests=20, window_seconds=600)
+
 
 # ─── Algérie Phone & Sécurité Helpers ──────────────────────────────────────────
 
@@ -159,9 +182,24 @@ async def list_wilayas(supabase = Depends(get_supabase)):
 async def create_order(
     req: CreateOrderRequest,
     background_tasks: BackgroundTasks = BackgroundTasks(),
-    supabase = Depends(get_supabase)
+    supabase = Depends(get_supabase),
+    request: Request = None,
 ):
     """Enregistre une commande avec recalcul strict et intégral des montants côté serveur."""
+    # 0. Anti-flood / Rate limiting par adresse IP (20 commandes max par 10 min par IP)
+    if request:
+        client_ip = (
+            request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+            or request.headers.get("x-real-ip", "").strip()
+            or (request.client.host if request.client else "")
+        )
+        if client_ip and client_ip not in ("127.0.0.1", "localhost", "testclient"):
+            if not order_ip_limiter.check(client_ip):
+                raise HTTPException(
+                    status_code=429,
+                    detail="Trop de commandes soumises depuis cette adresse. Veuillez patienter avant de réessayer."
+                )
+
     # 1. Validation de la boutique
     raw_store_id = req.store_id
     if not raw_store_id or str(raw_store_id).strip().lower() in ("demo", "null", "undefined") or str(raw_store_id).startswith("{{"):

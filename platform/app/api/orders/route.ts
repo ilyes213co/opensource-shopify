@@ -44,8 +44,36 @@ const MIN_QTY_PER_ITEM = 1;
 const MAX_QTY_PER_ITEM = 10;
 const MAX_ITEMS_PER_ORDER = 10;
 
+const orderIpLimiter = new Map<string, number[]>();
+const MAX_ORDERS_PER_WINDOW = 20;
+const WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+function checkIpRateLimit(ip: string): boolean {
+  if (!ip || ip === "unknown" || ip === "127.0.0.1" || ip === "::1" || ip === "localhost") return true;
+  const now = Date.now();
+  const cutoff = now - WINDOW_MS;
+  const timestamps = (orderIpLimiter.get(ip) || []).filter((t) => t > cutoff);
+  if (timestamps.length >= MAX_ORDERS_PER_WINDOW) {
+    return false;
+  }
+  timestamps.push(now);
+  orderIpLimiter.set(ip, timestamps);
+  return true;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const forwarded = req.headers.get("x-forwarded-for");
+    const firstIp = forwarded ? forwarded.split(",")[0]?.trim() : null;
+    const clientIp = firstIp || req.headers.get("x-real-ip")?.trim() || "unknown";
+
+    if (!checkIpRateLimit(clientIp)) {
+      return NextResponse.json(
+        { error: "Trop de commandes soumises depuis cette adresse. Veuillez patienter avant de réessayer." },
+        { status: 429, headers: corsHeaders }
+      );
+    }
+
     const body = await req.json();
     const supabase = getSupabaseAdmin();
 

@@ -51,9 +51,28 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ detail: "public_id manquant" }, { status: 400 });
     }
 
+    // Sécurité IDOR : n'autoriser la suppression que dans le dossier 'marchand/'
+    // et vérifier que la boutique appartient bien à l'utilisateur connecté.
+    if (!publicId.startsWith("marchand/")) {
+      return NextResponse.json({ detail: "Accès refusé" }, { status: 403 });
+    }
+
+    const parts = publicId.split("/");
+    if (parts.length < 3 || !parts[1]) {
+      return NextResponse.json({ detail: "public_id invalide" }, { status: 400 });
+    }
+
+    const storeId = parts[1];
+    const admin = getAdminClient();
+    const check = await verifyStoreOwner(storeId, user.id, admin);
+    if (!check.ok) {
+      return NextResponse.json({ detail: check.message }, { status: check.status });
+    }
+
     const res = await deleteFromCloudinary(publicId);
     return NextResponse.json(res);
   } catch (err: any) {
     return NextResponse.json({ detail: err.message || "Erreur lors de la suppression" }, { status: 500 });
   }
 }
+

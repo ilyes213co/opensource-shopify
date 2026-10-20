@@ -253,11 +253,22 @@ async def delete_team_member(
     check_team_management_allowed(user_id=user.id, supabase=supabase)
 
     try:
-        supabase.table("store_members").delete().eq("id", member_id).execute()
+        res = (
+            supabase.table("store_members")
+            .delete()
+            .eq("id", member_id)
+            .eq("owner_id", user.id)
+            .execute()
+        )
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Collaborateur introuvable ou accès refusé")
         return {"success": True}
+    except HTTPException:
+        raise
     except Exception as e:
         if is_missing_table_error(e):
             return {"success": True}
         logger.error(f"Erreur suppression collaborateur: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 

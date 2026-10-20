@@ -299,3 +299,81 @@ async def test_telegram_notification_dispatched():
         assert res["order_id"] == "order-abc-123456"
         assert len(bg_tasks.tasks) == 1
 
+
+@pytest.mark.anyio
+async def test_create_order_ip_rate_limiting():
+    from routes.orders import order_ip_limiter
+    mock_sb = MagicMock()
+    mock_sb.table.return_value.select.return_value.eq.return_value.execute.return_value = MagicMock(
+        data=[{"id": "store-1", "name": "Boutique", "status": "published", "settings": {}}]
+    )
+
+    req = CreateOrderRequest(
+        store_id="store-1",
+        customer_name="RateLimit User",
+        customer_phone="0555001122",
+        wilaya_id=16,
+    )
+
+    fake_request = MagicMock()
+    fake_request.headers.get.side_effect = lambda h, default="": "198.51.100.42" if h == "x-forwarded-for" else default
+    fake_request.client = None
+
+    # Reset limiter for this test IP
+    order_ip_limiter.requests["198.51.100.42"] = []
+
+    # Fill quota up to max_requests
+    for _ in range(order_ip_limiter.max_requests):
+        order_ip_limiter.check("198.51.100.42")
+
+    # Next call with this IP should trigger 429
+    with pytest.raises(HTTPException) as exc:
+        await create_order(req, supabase=mock_sb, request=fake_request)
+    assert exc.value.status_code == 429
+    assert "Trop de commandes" in exc.value.detail
+
+
+@pytest.mark.anyio
+async def test_delete_team_member_idor_protection():
+    from routes.team import delete_team_member
+    mock_sb = MagicMock()
+    mock_user = MagicMock(id="user-owner-1")
+
+    # Mock user profile with business plan
+    mock_sb.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
+        data={"plan": "business"}
+    )
+
+    # When deleting, verify owner_id is queried
+    del_mock = MagicMock()
+    del_mock.execute.return_value = MagicMock(data=[])  # Not found or wrong owner
+    mock_sb.table.return_value.delete.return_value.eq.return_value.eq.return_value = del_mock
+
+    with patch("routes.team.check_team_management_allowed", return_value=None):
+        with pytest.raises(HTTPException) as exc:
+            await delete_team_member(member_id="member-victim", user=mock_user, supabase=mock_sb)
+        assert exc.value.status_code == 404
+
+        # Verify that delete checked both member id AND owner_id
+        eq_calls = mock_sb.table.return_value.delete.return_value.eq.call_args_list
+        assert any(call[0] == ("id", "member-victim") for call in eq_calls)
+        second_eq = mock_sb.table.return_value.delete.return_value.eq.return_value.eq.call_args_list
+        assert any(call[0] == ("owner_id", "user-owner-1") for call in second_eq)
+
+
+@pytest.mark.anyio
+async def test_global_exception_handler_sanitized():
+    from main import global_exception_handler
+    import json
+    fake_req = MagicMock()
+    fake_req.headers.get.return_value = None
+    fake_exc = RuntimeError("Secret DB column 'password_hash' error on /var/www/internal")
+
+    res = await global_exception_handler(fake_req, fake_exc)
+    body = json.loads(res.body.decode())
+    assert res.status_code == 500
+    assert "password_hash" not in body["detail"]
+    assert "internal" not in body["detail"]
+    assert body["detail"] == "Une erreur interne du serveur est survenue."
+
+

@@ -93,7 +93,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
     response = JSONResponse(
         status_code=500,
-        content={"detail": f"Erreur interne du serveur: {str(exc)}"},
+        content={"detail": "Une erreur interne du serveur est survenue."},
     )
     if matched_origin:
         response.headers["Access-Control-Allow-Origin"] = matched_origin
