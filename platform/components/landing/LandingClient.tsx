@@ -1,62 +1,39 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, Plus, Minus, Check, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  Plus,
+  Minus,
+  Check,
+  Sparkles,
+  ExternalLink,
+  ShieldCheck,
+  ShoppingBag,
+  Eye,
+  CreditCard,
+  Banknote,
+  CheckCircle2,
+} from "lucide-react";
 import EasyTradeLogo from "@/components/brand/EasyTradeLogo";
 import ThreeAmbientScene from "@/components/brand/ThreeAmbientScene";
 
 import {
   TICKER_ITEMS,
   FEATURES,
-  STATS,
+  TRUST_METRICS,
   STEPS,
   FAQ_QUESTIONS,
   PRICING_PLANS,
 } from "@/lib/landing-data";
 
 export default function LandingClient() {
-  const [counts, setCounts] = useState<number[]>([0, 0, 0, 0]);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
-  const statsRef = useRef<HTMLDivElement | null>(null);
-  const animatedRef = useRef<boolean>(false);
 
-  // Intersection Observer for animated counter
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const first = entries[0];
-        if (first && first.isIntersecting && !animatedRef.current) {
-          animatedRef.current = true;
-          const duration = 1800;
-          const startTime = performance.now();
-
-          const updateCounter = (currentTime: number) => {
-            const elapsed = Math.min((currentTime - startTime) / duration, 1);
-            const easeOut = 1 - Math.pow(1 - elapsed, 3);
-
-            setCounts(STATS.map((s) => Math.round(easeOut * s.target)));
-
-            if (elapsed < 1) {
-              requestAnimationFrame(updateCounter);
-            }
-          };
-
-          requestAnimationFrame(updateCounter);
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    if (statsRef.current) {
-      observer.observe(statsRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Card cursor light glow effect
+  // Dynamic card glow on mouse move
   const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
@@ -72,29 +49,35 @@ export default function LandingClient() {
       <nav
         className="sticky top-0 z-40 flex items-center justify-between px-6 py-4 md:px-12 backdrop-blur-2xl transition-colors duration-300"
         style={{
-          background: "rgba(6, 6, 15, 0.84)",
+          background: "rgba(6, 6, 15, 0.88)",
           borderBottom: "1px solid var(--border, rgba(96, 165, 250, 0.28))",
         }}
       >
         <EasyTradeLogo size={34} href="/" />
 
         {/* Center links */}
-        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-white/70">
-          <a href="#features" className="hover:text-white transition-colors duration-200">
-            Fonctionnalités
-          </a>
+        <div className="hidden lg:flex items-center gap-7 text-sm font-semibold text-white/70">
           <a href="#how-it-works" className="hover:text-white transition-colors duration-200">
             Comment ça marche
           </a>
-          <a href="#pricing" className="hover:text-white transition-colors duration-200">
-            Tarifs
+          <a href="#features" className="hover:text-white transition-colors duration-200">
+            Fonctionnalités
           </a>
-          <a href="#stats" className="hover:text-white transition-colors duration-200">
-            Statistiques
+          <Link href="/demo" className="hover:text-white transition-colors duration-200">
+            Boutiques Démo
+          </Link>
+          <Link href="/pricing" className="hover:text-white transition-colors duration-200">
+            Tarifs
+          </Link>
+          <a href="#trust" className="hover:text-white transition-colors duration-200">
+            Notre Mission
           </a>
           <a href="#faq" className="hover:text-white transition-colors duration-200">
             FAQ
           </a>
+          <Link href="/blog" className="hover:text-white transition-colors duration-200">
+            Guides &amp; Blog
+          </Link>
         </div>
 
         {/* Right CTA buttons */}
@@ -107,7 +90,7 @@ export default function LandingClient() {
           </Link>
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 text-sm font-bold text-white px-5 py-2.5 rounded-xl shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white px-4 sm:px-5 py-2.5 rounded-xl shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
             style={{
               background:
                 "linear-gradient(135deg, var(--g, #2540ea) 0%, var(--gd, #1a2ca3) 100%)",
@@ -115,7 +98,7 @@ export default function LandingClient() {
               border: "1px solid rgba(255, 255, 255, 0.2)",
             }}
           >
-            <span>Commencer</span>
+            <span>Créer Ma Boutique</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -124,7 +107,7 @@ export default function LandingClient() {
       {/* ── HERO SECTION ── */}
       <section
         id="hero"
-        className="relative min-h-[86vh] flex items-center justify-center text-center px-4 pt-24 pb-20 md:pt-36 md:pb-28 overflow-hidden"
+        className="relative min-h-[86vh] flex items-center justify-center text-center px-4 pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden"
       >
         {/* Three.js 3D interactive ambient canvas */}
         <ThreeAmbientScene opacity={0.88} interactive={true} />
@@ -142,7 +125,7 @@ export default function LandingClient() {
         />
 
         {/* Hero content */}
-        <div className="relative z-10 max-w-[920px] mx-auto space-y-7">
+        <div className="relative z-10 max-w-[920px] mx-auto space-y-6">
           {/* Top pill badge */}
           <div
             className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full text-xs font-bold text-[#bfdbfe] border backdrop-blur-md shadow-lg"
@@ -179,35 +162,53 @@ export default function LandingClient() {
             </span>
           </h1>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link
-              href="/register"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl font-bold text-base text-white shadow-2xl transition-all duration-200 hover:-translate-y-1 hover:brightness-110"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--g, #2540ea) 0%, var(--gd, #1a2ca3) 100%)",
-                boxShadow: "0 14px 40px -8px var(--g-glow, rgba(37, 64, 234, 0.6))",
-                border: "1px solid rgba(255, 255, 255, 0.25)",
-              }}
-            >
-              <span>Créer ma boutique</span>
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+          {/* Hero Subtitle */}
+          <p className="text-base sm:text-xl text-white/75 max-w-2xl mx-auto leading-relaxed">
+            Créez votre boutique ou tunnel mono-produit sans carte bancaire internationale. Encaissez en espèces à la livraison (COD) dans les 58 wilayas avec Yalidine, ZR Express et Procolis.
+          </p>
 
-            <a
-              href="#features"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-semibold text-base text-white transition-all duration-200 hover:-translate-y-0.5"
-              style={{
-                background: "rgba(10, 14, 38, 0.75)",
-                border: "1px solid var(--border, rgba(96, 165, 250, 0.4))",
-                backdropFilter: "blur(16px)",
-                boxShadow: "0 12px 32px -8px rgba(0, 0, 0, 0.6)",
-              }}
-            >
-              <span>Explorer la plateforme</span>
-              <ChevronDown className="w-4 h-4 text-white/70" />
-            </a>
+          {/* CTAs */}
+          <div className="pt-2 space-y-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/register"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl font-bold text-base text-white shadow-2xl transition-all duration-200 hover:-translate-y-1 hover:brightness-110"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--g, #2540ea) 0%, var(--gd, #1a2ca3) 100%)",
+                  boxShadow: "0 14px 40px -8px var(--g-glow, rgba(37, 64, 234, 0.6))",
+                  border: "1px solid rgba(255, 255, 255, 0.25)",
+                }}
+              >
+                <span>Créer ma boutique gratuite</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+
+              <Link
+                href="/demo"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-semibold text-base text-white transition-all duration-200 hover:-translate-y-0.5"
+                style={{
+                  background: "rgba(10, 14, 38, 0.75)",
+                  border: "1px solid var(--border, rgba(96, 165, 250, 0.4))",
+                  backdropFilter: "blur(16px)",
+                  boxShadow: "0 12px 32px -8px rgba(0, 0, 0, 0.6)",
+                }}
+              >
+                <span>Voir les boutiques démo</span>
+                <ChevronDown className="w-4 h-4 text-white/70" />
+              </Link>
+            </div>
+
+            {/* Sincere subtext under CTA */}
+            <p className="text-xs text-white/60 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-2">
+              <span className="flex items-center gap-1 text-emerald-400">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Aucune carte bancaire requise pour commencer
+              </span>
+              <span>·</span>
+              <span className="text-white/70">Forfait gratuit actif immédiatement</span>
+              <span>·</span>
+              <span className="text-sky-300">0% de commission sur vos ventes</span>
+            </p>
           </div>
         </div>
       </section>
@@ -238,129 +239,37 @@ export default function LandingClient() {
         </div>
       </div>
 
-      {/* ── FEATURES SECTION (6 CLEAN, HIGH-VISIBILITY CARDS) ── */}
-      <section id="features" className="py-24 px-6 md:px-12 max-w-7xl mx-auto relative z-10">
-        <div className="space-y-3 mb-14 text-center md:text-left">
-          <span
-            className="text-xs font-black uppercase tracking-[3px]"
-            style={{
-              color: "var(--gl, #93c5fd)",
-              textShadow: "0 0 16px var(--g-glow, rgba(37, 64, 234, 0.6))",
-            }}
-          >
-            Fonctionnalités
-          </span>
-          <h2
-            className="text-3xl md:text-5xl font-black text-white tracking-tight"
-            style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
-          >
-            Tout ce qu&apos;il faut<br />pour vendre en Algérie
-          </h2>
-          <p className="text-white/70 text-base md:text-lg max-w-2xl">
-            Une infrastructure tout-en-un pensée pour le marché algérien, sans carte de crédit bancaire, sans complications techniques.
-          </p>
-        </div>
-
-        {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((feat, idx) => (
-            <div
-              key={idx}
-              onMouseMove={handleCardMouseMove}
-              className="group relative rounded-3xl p-8 flex flex-col justify-between min-h-[250px] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
-              style={{
-                background:
-                  "linear-gradient(155deg, rgba(28, 44, 148, 0.35) 0%, rgba(10, 14, 38, 0.85) 100%)",
-                border: "1px solid var(--border, rgba(96, 165, 250, 0.28))",
-                boxShadow: "0 12px 36px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.16)",
-                backdropFilter: "blur(20px)",
-                WebkitBackdropFilter: "blur(20px)",
-              }}
-            >
-              {/* Dynamic mouse cursor radial light */}
-              <div
-                className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  background:
-                    "radial-gradient(circle at var(--mx, 50%) var(--my, 50%), var(--g-glow, rgba(37, 64, 234, 0.5)) 0%, transparent 65%)",
-                }}
-              />
-
-              {/* Glowing top accent border on hover */}
-              <div
-                className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  background:
-                    "linear-gradient(90deg, transparent, var(--gl, #93c5fd), var(--g, #2540ea), transparent)",
-                }}
-              />
-
-              {/* Card top */}
-              <div className="relative z-10 flex items-center justify-between mb-4">
-                <span
-                  className="px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border text-white/80"
-                  style={{
-                    background: "rgba(37, 64, 234, 0.2)",
-                    borderColor: "var(--border, rgba(96, 165, 250, 0.3))",
-                  }}
-                >
-                  {feat.tag}
-                </span>
-                <span
-                  className="text-2xl font-black transition-all duration-300 group-hover:scale-110"
-                  style={{
-                    color: "var(--gl, #60a5fa)",
-                    fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
-                  }}
-                >
-                  {feat.num}
-                </span>
-              </div>
-
-              {/* Card body */}
-              <div className="relative z-10 space-y-2">
-                <h3
-                  className="text-xl font-extrabold text-white tracking-tight"
-                  style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
-                >
-                  {feat.title}
-                </h3>
-                <p className="text-sm text-white/70 leading-relaxed font-normal">{feat.body}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── STATS BELT ── */}
+      {/* ── TRUST METRICS BELT (SOLID STATIC NUMBERS - ZERO "0" FLICKER) ── */}
       <div
         id="stats"
-        ref={statsRef}
         className="py-16 px-6 border-y"
         style={{
           background:
             "linear-gradient(180deg, rgba(37, 64, 234, 0.18) 0%, rgba(10, 14, 38, 0.85) 100%)",
-          borderColor: "rgba(96, 165, 250, 0.45)",
+          borderColor: "rgba(96, 165, 250, 0.4)",
           boxShadow: "inset 0 0 40px var(--g-subtle, rgba(37, 64, 234, 0.22))",
         }}
       >
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {STATS.map((stat, idx) => (
-            <div key={idx} className="space-y-2">
+          {TRUST_METRICS.map((stat, idx) => (
+            <div key={idx} className="space-y-1.5">
               <div
-                className="text-4xl md:text-5xl font-black tracking-tight"
+                className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight"
                 style={{
                   color: "var(--gl, #93c5fd)",
                   fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
                   textShadow: "0 0 30px var(--g-glow, rgba(37, 64, 234, 0.6))",
                 }}
               >
-                {counts[idx]}
+                {stat.value}
                 {stat.suffix}
               </div>
-              <div className="text-xs md:text-sm font-bold uppercase tracking-wider text-white/80">
+              <div className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white">
                 {stat.label}
               </div>
+              <p className="text-[11px] sm:text-xs text-white/60 max-w-[200px] mx-auto leading-tight hidden sm:block">
+                {stat.detail}
+              </p>
             </div>
           ))}
         </div>
@@ -435,6 +344,226 @@ export default function LandingClient() {
         </div>
       </section>
 
+      {/* ── FEATURES SECTION (FACTUAL & HONEST) ── */}
+      <section id="features" className="py-20 px-6 md:px-12 max-w-7xl mx-auto relative z-10">
+        <div className="space-y-3 mb-14 text-center md:text-left">
+          <span
+            className="text-xs font-black uppercase tracking-[3px]"
+            style={{
+              color: "var(--gl, #93c5fd)",
+              textShadow: "0 0 16px var(--g-glow, rgba(37, 64, 234, 0.6))",
+            }}
+          >
+            Fonctionnalités
+          </span>
+          <h2
+            className="text-3xl md:text-5xl font-black text-white tracking-tight"
+            style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
+          >
+            Tout ce qu&apos;il faut<br />pour vendre en Algérie
+          </h2>
+          <p className="text-white/70 text-base md:text-lg max-w-2xl">
+            Une infrastructure tout-en-un pensée pour le marché algérien, sans carte de crédit internationale, sans complications techniques.
+          </p>
+        </div>
+
+        {/* Feature Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {FEATURES.map((feat, idx) => (
+            <div
+              key={idx}
+              onMouseMove={handleCardMouseMove}
+              className="group relative rounded-3xl p-8 flex flex-col justify-between min-h-[250px] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+              style={{
+                background:
+                  "linear-gradient(155deg, rgba(28, 44, 148, 0.35) 0%, rgba(10, 14, 38, 0.85) 100%)",
+                border: "1px solid var(--border, rgba(96, 165, 250, 0.28))",
+                boxShadow: "0 12px 36px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.16)",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+              }}
+            >
+              {/* Dynamic mouse cursor radial light */}
+              <div
+                className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  background:
+                    "radial-gradient(circle at var(--mx, 50%) var(--my, 50%), var(--g-glow, rgba(37, 64, 234, 0.5)) 0%, transparent 65%)",
+                }}
+              />
+
+              {/* Glowing top accent border on hover */}
+              <div
+                className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  background:
+                    "linear-gradient(90deg, transparent, var(--gl, #93c5fd), var(--g, #2540ea), transparent)",
+                }}
+              />
+
+              {/* Card top */}
+              <div className="relative z-10 flex items-center justify-between mb-4">
+                <span
+                  className="px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border text-white/80"
+                  style={{
+                    background: "rgba(37, 64, 234, 0.2)",
+                    borderColor: "var(--border, rgba(96, 165, 250, 0.3))",
+                  }}
+                >
+                  {feat.tag}
+                </span>
+                <span
+                  className="text-2xl font-black transition-all duration-300 group-hover:scale-110"
+                  style={{
+                    color: "var(--gl, #60a5fa)",
+                    fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
+                  }}
+                >
+                  {feat.num}
+                </span>
+              </div>
+
+              {/* Card body */}
+              <div className="relative z-10 space-y-2">
+                <h3
+                  className="text-xl font-extrabold text-white tracking-tight"
+                  style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
+                >
+                  {feat.title}
+                </h3>
+                <p className="text-sm text-white/70 leading-relaxed font-normal">{feat.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── DEMO STORES SECTION PREVIEW ── */}
+      <section id="demo" className="py-20 px-6 md:px-12 max-w-7xl mx-auto relative z-10">
+        <div className="space-y-3 mb-12 text-center">
+          <span
+            className="text-xs font-black uppercase tracking-[3px]"
+            style={{
+              color: "var(--gl, #93c5fd)",
+              textShadow: "0 0 16px var(--g-glow, rgba(37, 64, 234, 0.6))",
+            }}
+          >
+            Exemples Concrets
+          </span>
+          <h2
+            className="text-3xl md:text-5xl font-black text-white tracking-tight"
+            style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
+          >
+            Boutiques et tunnels en action
+          </h2>
+          <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto">
+            Découvrez des configurations réelles adaptées aux secteurs les plus dynamiques du commerce en ligne algérien.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Demo 1 : Cosmétiques */}
+          <div
+            className="rounded-3xl p-6 border space-y-4 flex flex-col justify-between"
+            style={{
+              background: "linear-gradient(155deg, rgba(28, 44, 148, 0.25) 0%, rgba(10, 14, 38, 0.85) 100%)",
+              borderColor: "rgba(96, 165, 250, 0.28)",
+            }}
+          >
+            <div className="space-y-3">
+              <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#9d4edd]/20 text-[#e0aaff] border border-[#9d4edd]/30">
+                Cosmétique &amp; Soins
+              </span>
+              <h3 className="text-xl font-bold text-white">Botanica DZ</h3>
+              <p className="text-xs text-white/70 leading-relaxed">
+                Soins artisanaux (huile de figue de barbarie, eau florale). Formulaire COD épuré optimisé pour le trafic Instagram.
+              </p>
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-white/70 space-y-1">
+                <div>✓ Calcul livraison domicile / stop-desk</div>
+                <div>✓ Bordereau Yalidine prêt à imprimer</div>
+              </div>
+            </div>
+            <Link
+              href="/demo"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-sky-400 hover:text-sky-300 py-2 transition-colors"
+            >
+              <span>Voir la démo complète</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {/* Demo 2 : Mode */}
+          <div
+            className="rounded-3xl p-6 border space-y-4 flex flex-col justify-between"
+            style={{
+              background: "linear-gradient(155deg, rgba(28, 44, 148, 0.25) 0%, rgba(10, 14, 38, 0.85) 100%)",
+              borderColor: "rgba(96, 165, 250, 0.28)",
+            }}
+          >
+            <div className="space-y-3">
+              <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white border border-white/30">
+                Mode &amp; Streetwear
+              </span>
+              <h3 className="text-xl font-bold text-white">DzStreetwear</h3>
+              <p className="text-xs text-white/70 leading-relaxed">
+                Coupes oversize et hoodies lourds. Sélecteur de tailles (S à XXL) et commande en 2 clics pour les acheteurs TikTok.
+              </p>
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-white/70 space-y-1">
+                <div>✓ Sélecteur de tailles et couleurs</div>
+                <div>✓ Expédition ZR Express 58 wilayas</div>
+              </div>
+            </div>
+            <Link
+              href="/demo"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-sky-400 hover:text-sky-300 py-2 transition-colors"
+            >
+              <span>Voir la démo complète</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {/* Demo 3 : Tech */}
+          <div
+            className="rounded-3xl p-6 border space-y-4 flex flex-col justify-between"
+            style={{
+              background: "linear-gradient(155deg, rgba(28, 44, 148, 0.25) 0%, rgba(10, 14, 38, 0.85) 100%)",
+              borderColor: "rgba(96, 165, 250, 0.28)",
+            }}
+          >
+            <div className="space-y-3">
+              <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#00f0ff]/20 text-[#a5f3fc] border border-[#00f0ff]/30">
+                High-Tech &amp; Audio
+              </span>
+              <h3 className="text-xl font-bold text-white">TechVolt Algérie</h3>
+              <p className="text-xs text-white/70 leading-relaxed">
+                Écouteurs TWS et chargeurs rapides GaN. Fiches techniques complètes et réassurance sur la garantie de fonctionnement.
+              </p>
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-white/70 space-y-1">
+                <div>✓ Fiche technique structurée</div>
+                <div>✓ Emballage antichoc &amp; Procolis</div>
+              </div>
+            </div>
+            <Link
+              href="/demo"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-sky-400 hover:text-sky-300 py-2 transition-colors"
+            >
+              <span>Voir la démo complète</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        <div className="text-center pt-8">
+          <Link
+            href="/demo"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/15 text-white border border-white/20 transition-all"
+          >
+            <span>Explorer la page démo détaillée</span>
+            <ExternalLink className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+
       {/* ── PRICING SECTION ── */}
       <section id="pricing" className="py-24 px-6 md:px-12 max-w-7xl mx-auto relative z-10">
         <div className="space-y-4 mb-14 text-center">
@@ -454,7 +583,7 @@ export default function LandingClient() {
             Des forfaits clairs, adaptés au marché algérien
           </h2>
           <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto">
-            Zéro commission sur vos ventes. Démarrez gratuitement et passez à la vitesse supérieure quand vos commandes décollent.
+            Zéro commission sur vos ventes. Démarrez gratuitement et passez à la formule supérieure quand vos commandes décollent.
           </p>
 
           {/* Billing Switcher Toggle */}
@@ -630,28 +759,99 @@ export default function LandingClient() {
 
         {/* Trust & payment methods banner under pricing */}
         <div
-          className="mt-12 rounded-2xl p-5 border text-center flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/70"
+          className="mt-12 rounded-3xl p-6 sm:p-8 border flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-white/75"
           style={{
-            background: "rgba(10, 14, 38, 0.6)",
-            borderColor: "rgba(96, 165, 250, 0.2)",
-            backdropFilter: "blur(12px)",
+            background: "rgba(10, 14, 38, 0.75)",
+            borderColor: "rgba(96, 165, 250, 0.25)",
+            backdropFilter: "blur(16px)",
           }}
         >
-          <div className="flex items-center gap-2 font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Paiement 100% sécurisé en Algérie (DZD)</span>
+          <div className="space-y-1.5 text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-2 font-bold text-sm text-white">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>Clarification importante sur les paiements</span>
+            </div>
+            <p className="text-white/60 text-xs">
+              Seul le marchand règle son abonnement en DZD (BaridiMob, Edahabia, SATIM). Les acheteurs finaux règlent toujours en espèces à la livraison.
+            </p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] text-white/60">
-            <span>✓ BaridiMob</span>
-            <span>✓ Carte Edahabia</span>
-            <span>✓ Virement bancaire</span>
-            <span>✓ Aucun frais de transaction prélevé</span>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold">
+            <span className="px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10">✓ BaridiMob</span>
+            <span className="px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10">✓ Carte Edahabia / CIB</span>
+            <span className="px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10">✓ 0% commission</span>
+            <Link
+              href="/pricing"
+              className="text-sky-400 hover:text-sky-300 underline font-bold"
+            >
+              Voir la page tarifs détaillée →
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ── FAQ SECTION (SEO & USER CONFIDENCE) ── */}
-      <section id="faq" className="py-24 px-6 md:px-12 max-w-5xl mx-auto relative z-10">
+      {/* ── SECTION "POURQUOI NOUS FAIRE CONFIANCE" (SINCÈRE & BÊTA ACTIVE) ── */}
+      <section id="trust" className="py-20 px-6 md:px-12 max-w-5xl mx-auto relative z-10">
+        <div
+          className="rounded-3xl p-8 sm:p-12 border relative overflow-hidden space-y-6 text-center"
+          style={{
+            background: "linear-gradient(155deg, rgba(28, 44, 148, 0.3) 0%, rgba(10, 14, 38, 0.9) 100%)",
+            borderColor: "rgba(96, 165, 250, 0.35)",
+            boxShadow: "0 16px 45px -10px rgba(0, 0, 0, 0.7)",
+          }}
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30">
+            <span>Transparence &amp; Authenticité</span>
+          </div>
+
+          <h2
+            className="text-2xl sm:text-4xl font-black text-white"
+            style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)" }}
+          >
+            Pourquoi nous faire confiance ?
+          </h2>
+
+          <p className="text-sm sm:text-base text-white/80 max-w-2xl mx-auto leading-relaxed">
+            Sur Internet, trop de plateformes affichent de faux chiffres, des compteurs gonflés ou de faux témoignages. Chez <strong>EasyTradez</strong>, nous choisissons la vérité :
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left pt-2">
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
+              <h3 className="font-bold text-white text-sm">En Version Bêta Active</h3>
+              <p className="text-xs text-white/70 leading-relaxed">
+                Le projet est jeune et en plein développement. Nous échangeons quotidiennement avec nos marchands pour adapter chaque outil à la réalité du terrain.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
+              <h3 className="font-bold text-white text-sm">Équipe Basée en Algérie</h3>
+              <p className="text-xs text-white/70 leading-relaxed">
+                Notre équipe technique et support est basée à Oran. Nous parlons votre langue (Darija &amp; Français) et comprenons les blocages locaux.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
+              <h3 className="font-bold text-white text-sm">Sans Engagement</h3>
+              <p className="text-xs text-white/70 leading-relaxed">
+                Testez gratuitement sans renseigner de carte bancaire. Vous êtes libre d&apos;arrêter à tout moment si la plateforme ne vous convient pas.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <Link
+              href="/about"
+              className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-sky-400 hover:text-sky-300 underline"
+            >
+              <span>En savoir plus sur notre histoire et notre équipe à Oran</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ SECTION (10 FACTUAL QUESTIONS) ── */}
+      <section id="faq" className="py-20 px-6 md:px-12 max-w-5xl mx-auto relative z-10">
         <div className="space-y-3 mb-14 text-center">
           <span
             className="text-xs font-black uppercase tracking-[3px]"
@@ -669,7 +869,7 @@ export default function LandingClient() {
             Questions Fréquentes
           </h2>
           <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto">
-            Tout comprendre sur l&apos;ouverture de votre boutique et la vente en ligne en Algérie.
+            Toutes les réponses transparentes pour démarrer et vendre en ligne en toute sérénité.
           </p>
         </div>
 
@@ -752,7 +952,7 @@ export default function LandingClient() {
             </h2>
 
             <p className="text-white/70 text-base md:text-lg max-w-lg mx-auto">
-              Rejoignez dès aujourd&apos;hui les marchands et créateurs qui développent leur commerce en Algérie.
+              Rejoignez dès aujourd&apos;hui les premiers marchands qui testent et développent leur commerce en Algérie.
             </p>
 
             <div>
@@ -766,7 +966,7 @@ export default function LandingClient() {
                   border: "1px solid rgba(255, 255, 255, 0.25)",
                 }}
               >
-                <span>Commencer maintenant</span>
+                <span>Créer ma boutique gratuite</span>
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
@@ -774,43 +974,72 @@ export default function LandingClient() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {/* ── COMPREHENSIVE TRUST FOOTER ── */}
       <footer
-        className="py-12 px-6 border-t text-center space-y-3 relative z-10"
+        className="py-14 px-6 md:px-12 border-t text-center space-y-6 relative z-10"
         style={{
           borderColor: "var(--border, rgba(96, 165, 250, 0.28))",
-          background: "rgba(6, 6, 15, 0.95)",
+          background: "rgba(6, 6, 15, 0.96)",
         }}
       >
-        <div className="text-2xl">🇩🇿</div>
-        <p className="text-sm text-white/60">
-          © 2026 <strong style={{ color: "var(--gl, #93c5fd)" }}>EasyTradez</strong> · Fait avec fierté à Oran, Algérie
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-white/40 pt-2">
-          <Link href="/login" className="hover:text-white transition-colors">
-            Connexion
-          </Link>
-          <Link href="/register" className="hover:text-white transition-colors">
-            Inscription
-          </Link>
-          <a href="#features" className="hover:text-white transition-colors">
-            Fonctionnalités
-          </a>
-          <a href="#how-it-works" className="hover:text-white transition-colors">
-            Comment ça marche
-          </a>
-          <a href="#faq" className="hover:text-white transition-colors">
-            FAQ
-          </a>
-          <Link href="/privacy" className="hover:text-white transition-colors">
-            Confidentialité
-          </Link>
-          <Link href="/terms" className="hover:text-white transition-colors">
-            Conditions d&apos;utilisation
-          </Link>
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/10 pb-6">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🇩🇿</span>
+              <span className="font-extrabold text-white text-base">EasyTradez</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                Bêta Algérie
+              </span>
+            </div>
+
+            <div className="text-xs text-white/60">
+              Support direct : <a href="mailto:support@easytradez.site" className="text-sky-400 hover:underline">support@easytradez.site</a>
+            </div>
+          </div>
+
+          {/* Legal details & Location */}
+          <div className="text-xs text-white/50 leading-relaxed max-w-3xl mx-auto space-y-1">
+            <p className="font-medium text-white/70">
+              Édité par <strong>EasyTradez Technologies</strong> (SARL en cours d&apos;immatriculation / Bêta) · Siège : Oran, Algérie.
+            </p>
+            <p>
+              Conformité Loi n° 09-04 relative aux infractions TIC et Loi n° 18-07 relative à la protection des personnes physiques dans le traitement des données à caractère personnel.
+            </p>
+          </div>
+
+          {/* Sincere navigation footer links */}
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-white/70 pt-2 font-medium">
+            <Link href="/pricing" className="hover:text-white transition-colors">
+              Tarifs
+            </Link>
+            <Link href="/demo" className="hover:text-white transition-colors">
+              Boutiques Démo
+            </Link>
+            <Link href="/about" className="hover:text-white transition-colors">
+              À Propos
+            </Link>
+            <Link href="/blog" className="hover:text-white transition-colors">
+              Blog &amp; Guides
+            </Link>
+            <Link href="/terms" className="hover:text-white transition-colors">
+              Conditions Générales (CGU)
+            </Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">
+              Protection des Données
+            </Link>
+            <Link href="/login" className="hover:text-white transition-colors">
+              Connexion Marchand
+            </Link>
+            <Link href="/register" className="hover:text-white transition-colors text-sky-400">
+              Inscription Gratuite
+            </Link>
+          </div>
+
+          <p className="text-[11px] text-white/40 pt-2">
+            © 2026 EasyTradez. Conçu avec fierté pour les entrepreneurs et créateurs en Algérie.
+          </p>
         </div>
       </footer>
-
     </div>
   );
 }

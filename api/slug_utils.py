@@ -66,7 +66,88 @@ RESERVED_SLUGS: set[str] = {
     "webhook",
     "cdn",
     "test",
+    "demo",
+    # Marques et entités tierces protégées (interdites à l'inscription)
+    "apple",
+    "adidas",
+    "nike",
+    "gucci",
+    "samsung",
+    "huawei",
+    "xiaomi",
+    "sony",
+    "lg",
+    "oppo",
+    "realme",
+    "vivo",
+    "dell",
+    "hp",
+    "lenovo",
+    "asus",
+    "acer",
+    "intel",
+    "amd",
+    "microsoft",
+    "google",
+    "zara",
+    "louisvuitton",
+    "chanel",
+    "dior",
+    "prada",
+    "rolex",
+    "lacoste",
+    "puma",
+    "reebok",
+    "bershka",
+    "pullandbear",
+    "stradivarius",
+    "sephora",
+    "cartier",
+    "balenciaga",
+    "versace",
+    "armani",
+    "hermes",
+    "burberry",
+    # Transporteurs & institutions algériennes
+    "yalidine",
+    "zrexpress",
+    "procolis",
+    "maystro",
+    "baridimob",
+    "algerieposte",
+    "satim",
+    "cib",
+    "edahabia",
 }
+
+TEST_SANDBOX_SLUGS: set[str] = {
+    "jjj",
+    "sss",
+    "zzz",
+    "ggg",
+    "eee",
+    "qa",
+    "eeee05",
+    "test",
+    "sandbox",
+    "dev",
+    "test-store",
+    "admin-test",
+    "qa-store",
+}
+
+
+def is_test_store(slug: str, store_data: Optional[dict] = None) -> bool:
+    if not slug:
+        return False
+    clean = slug.strip().lower()
+    if clean in TEST_SANDBOX_SLUGS:
+        return True
+    if clean.startswith("test-") or clean.startswith("qa-") or clean.startswith("sandbox-"):
+        return True
+    if store_data and (store_data.get("is_sandbox") or (store_data.get("settings") or {}).get("is_sandbox")):
+        return True
+    return False
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 MIN_SLUG_LENGTH = 3

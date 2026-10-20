@@ -1,110 +1,158 @@
 export const TICKER_ITEMS = [
-  "Paiement à la livraison",
-  "Algérie · الجزائر",
-  "Yalidine & ZR Express",
+  "Paiement à la livraison (COD)",
+  "Algérie · 58 Wilayas",
+  "Yalidine Express & ZR Express",
   "Comptabilité en DZD",
-  "58 Wilayas couvertes",
-  "Boutique 100% Mobile",
-  "Certificat SSL Sécurisé",
-  "Zéro Carte Bancaire requise",
-  "Support Darija & Français",
-  "Ouverture en 5 minutes",
+  "0% de commission sur vos ventes",
+  "Boutique légère pour mobile 3G/4G",
+  "Bordereaux d'expédition prêts",
+  "Aucune carte bancaire requise pour commencer",
+  "Support en Darija & Français",
+  "Mise en ligne en 5 minutes",
 ];
 
 export const FEATURES = [
   {
     num: "01",
-    title: "Paiement à la livraison",
-    body: "Le standard incontournable en Algérie. Vos clients règlent en espèces à la remise du colis par le livreur. Zéro friction, confiance maximale.",
+    title: "Paiement à la livraison (COD)",
+    body: "Le mode d'achat utilisé par la quasi-totalité des clients en Algérie. Vos acheteurs commandent simplement avec leur nom et téléphone, puis règlent en espèces au livreur.",
     tag: "Standard Algérie",
   },
   {
     num: "02",
-    title: "IA intégrée",
-    body: "Génération de boutiques stylées et fiches produits captivantes grâce à l'IA en moins d'une minute.",
-    tag: "Intelligent",
+    title: "Boutique ou Tunnel de vente",
+    body: "Adaptez votre format selon votre activité : boutique multi-produits avec panier et catégories, ou tunnel mono-produit direct conçu pour convertir vos visiteurs TikTok et Instagram.",
+    tag: "Multi-formats",
   },
   {
     num: "03",
-    title: "Livraison Intégrée",
-    body: "Bordereaux de livraison imprimables avec le montant à encaisser.",
+    title: "58 Wilayas & Tarifs personnalisés",
+    body: "Définissez vos tarifs de livraison à domicile et stop-desk pour chaque wilaya, ou appliquez un tarif standardisé en un seul clic.",
     tag: "58 Wilayas",
   },
   {
     num: "04",
-    title: "Déploiement rapide",
-    body: "Votre boutique sera en ligne dans moins d'une minute, prête à recevoir des commandes et à convertir vos visiteurs.",
-    tag: "< 60 secondes",
+    title: "Bordereaux de livraison prêts à imprimer",
+    body: "Générez directement vos bordereaux d'expédition avec l'adresse du client et le montant exact en DZD à encaisser par le transporteur.",
+    tag: "Logistique claire",
   },
   {
     num: "05",
-    title: "100% Mobile-first",
-    body: "9 commandes sur 10 se font sur smartphone en Algérie. Les vitrines sont calibrées pour se charger instantanément même en connexion 3G/4G.",
-    tag: "Ultra-rapide",
+    title: "Conçu pour le mobile et les réseaux 3G/4G",
+    body: "En Algérie, la grande majorité des commandes s'effectuent sur smartphone. Les pages sont allégées pour s'afficher rapidement, même avec une connexion mobile modeste.",
+    tag: "Mobile-first",
   },
   {
     num: "06",
-    title: "Protection Anti-Faux Ordres",
-    body: "Certificat SSL inclus, filtres intelligents pour bloquer les commandes frauduleuses ou spams et infrastructure cloud toujours en ligne.",
-    tag: "Sécurité Pro",
+    title: "Filtrage anti-commandes abusives",
+    body: "Vérification stricte du format des numéros algériens (05, 06, 07), limitation des envois multiples et liste noire personnalisable pour préserver votre stock et votre trésorerie.",
+    tag: "Sécurité & Contrôle",
   },
 ];
 
-export const STATS = [
-  { target: 99, suffix: "%", label: "Disponibilité garantie" },
-  { target: 58, suffix: "", label: "Wilayas couvertes" },
-  { target: 5, suffix: "min", label: "Pour ouvrir sa boutique" },
-  { target: 0, suffix: " DZD", label: "Pour commencer" },
+export const TRUST_METRICS = [
+  {
+    value: "58",
+    suffix: " Wilayas",
+    label: "Couverture nationale",
+    detail: "Tarifs domicile et stop-desk configurables pour toute l'Algérie",
+  },
+  {
+    value: "COD",
+    suffix: "",
+    label: "Paiement à la livraison",
+    detail: "Vos acheteurs règlent en espèces sans carte bancaire",
+  },
+  {
+    value: "0%",
+    suffix: "",
+    label: "Commission sur vos ventes",
+    detail: "Vous conservez 100% de vos marges commerciales",
+  },
+  {
+    value: "0",
+    suffix: " DZD",
+    label: "Pour démarrer",
+    detail: "Forfait gratuit actif immédiatement sans engagement",
+  },
 ];
+
+export const STATS = TRUST_METRICS.map((m) => ({
+  target: m.value === "58" ? 58 : m.value === "0" ? 0 : 100,
+  suffix: m.suffix,
+  label: m.label,
+  valueText: m.value,
+  detail: m.detail,
+}));
 
 export const STEPS = [
   {
     step: "Étape 01",
-    title: "Créez votre compte en 60s",
-    body: "Renseignez votre nom et numéro de téléphone. Votre boutique et son sous-domaine sont immédiatement configurés.",
+    title: "Créez votre compte en 60 secondes",
+    body: "Renseignez votre nom et numéro de téléphone. Votre boutique et son adresse web sécurisée sont immédiatement prêtes.",
   },
   {
     step: "Étape 02",
-    title: "Ajoutez vos produits en DZD",
-    body: "Importez vos photos, décrivez vos articles et fixez vos tarifs en dinars algériens en toute simplicité grâce à nos modèles.",
+    title: "Ajoutez vos produits en Dinars (DZD)",
+    body: "Téléversez vos photos, renseignez vos descriptions et fixez vos prix en dinars algériens en toute clarté.",
   },
   {
     step: "Étape 03",
-    title: "Encaissez à la livraison",
-    body: "Recevez vos premières commandes en direct, expédiez avec Yalidine ou ZR Express, et encaissez vos paiements en espèces.",
+    title: "Expédiez et encaissez vos ventes",
+    body: "Recevez les commandes de vos clients, confiez les colis à votre transporteur (Yalidine, ZR Express ou autre), et encaissez les règlements en espèces.",
   },
 ];
 
 export const FAQ_QUESTIONS = [
   {
-    question: "Comment fonctionne le paiement à la livraison (COD) sur EasyTradez ?",
+    question: "EasyTradez prélève-t-il une commission sur mes commandes ?",
     answer:
-      "EasyTradez est conçu spécifiquement pour les habitudes d'achat en Algérie. Vos clients n'ont pas besoin de carte bancaire : ils remplissent un formulaire direct en 30 secondes (Nom, Téléphone, Wilaya, Commune) et règlent le montant de leur commande en espèces lors de la remise du colis par le livreur.",
+      "Non, 0% de commission. Vous conservez l'intégralité de vos marges sur chaque vente. Notre modèle économique repose uniquement sur des forfaits d'abonnement fixes transparents (dont un forfait Gratuit pour démarrer sans frais).",
   },
   {
-    question: "Puis-je intégrer Yalidine Express, ZR Express ou d'autres transporteurs ?",
+    question: "Comment mes clients finaux règlent-ils leurs achats ?",
     answer:
-      "Absolument. Vous pouvez connecter vos transporteurs habituels (Yalidine Express, ZR Express, Procolis, etc.) pour automatiser l'édition des bordereaux d'expédition et afficher directement les tarifs de livraison à domicile ou stop-desk pour les 58 wilayas.",
+      "En Algérie, le standard absolu est le paiement à la livraison (Cash on Delivery / COD). Vos clients n'ont besoin d'aucune carte bancaire : ils saisissent simplement leur nom, téléphone et wilaya sur votre formulaire, puis règlent le montant de la commande en espèces lors de la remise du colis par le livreur.",
   },
   {
-    question: "Ai-je besoin d'une carte bancaire internationale pour utiliser EasyTradez ?",
+    question: "Qui paie par carte et qui paie en espèces ?",
     answer:
-      "Non, aucune carte bancaire internationale (Visa / Mastercard) n'est requise. Les marchands algériens peuvent activer leur compte et régler leurs forfaits via BaridiMob, carte Edahabia ou virement bancaire local.",
+      "La distinction est très simple : seul le marchand règle son abonnement SaaS EasyTradez (forfait Pro ou Business) via BaridiMob, carte Edahabia/CIB ou virement local. Les clients finaux de votre boutique, eux, ne paient JAMAIS par carte : ils règlent exclusivement en espèces à la livraison de leur commande.",
   },
   {
-    question: "Puis-je créer à la fois un funnel mono-produit et une boutique catalogue ?",
+    question: "Puis-je expédier avec Yalidine Express, ZR Express ou Procolis ?",
     answer:
-      "Oui. EasyTradez supporte nativement deux architectures de vente : le funnel mono-produit (idéal pour les lancements sponsorisés TikTok/Instagram Ads avec fort taux de conversion) et la boutique multi-produits avec gestion de catégories, navigation par rayons et panier.",
+      "Oui. Vous pouvez renseigner vos tarifs de livraison pour chaque wilaya (domicile et stop-desk) et générer des bordereaux de livraison prêts à imprimer avec le montant exact à encaisser. Vous restez totalement libre de travailler avec le transporteur de votre choix en Algérie.",
   },
   {
-    question: "Les boutiques sont-elles optimisées pour les téléphones portables ?",
+    question: "Comment limiter les colis refusés ou retours (retour COD) ?",
     answer:
-      "100% mobile-first. En Algérie, plus de 92% des achats en ligne se font sur smartphone. Nos vitrines sont ultralégères, pensées pour les réseaux mobiles 3G/4G, et se chargent en moins d'une seconde.",
+      "EasyTradez intègre des outils concrets pour sécuriser vos expéditions : obligation de numéro algérien valide à 10 chiffres (05, 06, 07), limitation automatique des commandes répétées suspectes, statut de rappel/confirmation téléphonique avant envoi, et liste noire personnalisable des numéros non sérieux.",
   },
   {
-    question: "Combien de temps faut-il pour mettre ma boutique en ligne ?",
+    question: "Ai-je besoin d'une carte bancaire internationale (Visa/Mastercard) ?",
     answer:
-      "Moins de 5 minutes. Notre assistant de création guidé et notre IA vous permettent de choisir un thème, importer votre logo, saisir votre produit vedette et obtenir une URL publique active immédiatement.",
+      "Non, aucune carte internationale n'est requise. Pour les forfaits payants, le règlement s'effectue en monnaie locale (DZD) via BaridiMob, carte Edahabia/CIB ou virement bancaire algérien.",
+  },
+  {
+    question: "Ai-je besoin d'un registre de commerce pour tester la plateforme ?",
+    answer:
+      "Non, vous pouvez démarrer immédiatement avec le forfait Gratuit pour tester votre concept, ajouter vos premiers produits et vérifier l'intérêt de vos clients sans formalité préalable.",
+  },
+  {
+    question: "Puis-je connecter mon propre nom de domaine (.dz ou .com) ?",
+    answer:
+      "Oui. Dès le forfait Pro, vous pouvez utiliser votre propre domaine personnalisé (par exemple votreboutique.com ou votreboutique.dz). La configuration s'effectue simplement en ajoutant l'enregistrement CNAME indiqué dans vos paramètres.",
+  },
+  {
+    question: "Puis-je migrer depuis Shopify, YouCan ou Instagram ?",
+    answer:
+      "Absolument. Vous pouvez recréer votre catalogue en quelques minutes grâce à notre interface simplifiée et commencer à rediriger votre audience TikTok et Instagram vers votre nouvelle vitrine EasyTradez sans dépendre de devises étrangères ni de frais cachés.",
+  },
+  {
+    question: "Comment contacter l'équipe d'assistance en cas de besoin ?",
+    answer:
+      "Notre équipe est basée en Algérie et répond directement en arabe algérien (Darija) et en français. Vous pouvez nous joindre par WhatsApp grâce au bouton présent en bas de chaque page ou par e-mail à support@easytradez.site.",
   },
 ];
 

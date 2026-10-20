@@ -62,6 +62,7 @@ export default function ProductPage({
   const [customerName, setCustomerName] = useState<string>("");
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [customerCommune, setCustomerCommune] = useState<string>("");
+  const [consent, setConsent] = useState<boolean>(false);
   const [showOrderForm, setShowOrderForm] = useState<boolean>(false);
 
   // UI state
@@ -173,6 +174,11 @@ export default function ProductPage({
         showToast("Ce numéro de téléphone n'est pas autorisé à passer commande.");
         return;
       }
+    }
+
+    if (!consent) {
+      showToast("Veuillez accepter la transmission de vos coordonnées pour la livraison (Loi 18-07).");
+      return;
     }
 
     submitOrder();
@@ -657,29 +663,43 @@ export default function ProductPage({
                   )}
                 </div>
               ) : (
-                <button
-                  type="button"
-                  className="pd-btn pd-btn--buy"
-                  disabled={isSubmitting}
-                  onClick={handleOrderClick}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                <>
+                  <div style={{ marginBottom: "14px", textAlign: "left" }}>
+                    <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", cursor: "pointer", fontSize: "12px", opacity: 0.85 }}>
+                      <input
+                        type="checkbox"
+                        checked={consent}
+                        onChange={(e) => setConsent(e.target.checked)}
+                        style={{ marginTop: "2px", cursor: "pointer" }}
+                      />
+                      <span>J&apos;accepte la transmission de mes coordonnées au transporteur pour la livraison de ma commande (Loi algérienne n° 18-07).</span>
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="pd-btn pd-btn--buy"
+                    disabled={isSubmitting}
+                    onClick={handleOrderClick}
                   >
-                    <rect x="2.5" y="6" width="19" height="12" rx="2" />
-                    <circle cx="12" cy="12" r="2.6" />
-                  </svg>
-                  {isSubmitting
-                    ? "Enregistrement..."
-                    : showOrderForm
-                    ? "Confirmer la commande (Paiement à la livraison)"
-                    : "Commander — paiement à la livraison"}
-                </button>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="2.5" y="6" width="19" height="12" rx="2" />
+                      <circle cx="12" cy="12" r="2.6" />
+                    </svg>
+                    {isSubmitting
+                      ? "Enregistrement..."
+                      : showOrderForm
+                      ? "Confirmer la commande (Paiement à la livraison)"
+                      : "Commander — paiement à la livraison"}
+                  </button>
+                </>
               )}
 
               {waNumber && !orderDone && (

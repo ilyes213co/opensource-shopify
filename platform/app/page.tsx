@@ -8,7 +8,7 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://easytradez.site";
 export const metadata: Metadata = {
   title: "EasyTradez — Créez votre Boutique & Funnel en Ligne en Algérie (58 Wilayas)",
   description:
-    "Plateforme e-commerce n°1 en Algérie conçue pour les marchands et créateurs. Lancez votre boutique ou funnel en 5 minutes avec paiement à la livraison (COD), intégration Yalidine & ZR Express, et comptabilité en DZD.",
+    "Plateforme e-commerce algérienne pour marchands et créateurs. Lancez votre boutique ou tunnel de vente en 5 minutes avec paiement à la livraison (COD), intégration Yalidine & ZR Express, et comptabilité en DZD.",
   alternates: {
     canonical: siteUrl,
     languages: {

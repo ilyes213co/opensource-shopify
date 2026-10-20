@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getAdminClient } from "@/lib/api-auth";
+import { isTestStore } from "@/lib/slug-utils";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
 
   const { data: store } = await supabase
     .from("stores")
-    .select("name, description, logo_url, cover_url, status")
+    .select("name, description, logo_url, cover_url, status, settings")
     .eq("slug", slug)
     .in("status", ["published", "active", "draft"])
     .maybeSingle();
@@ -29,10 +30,23 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://easytradez.site";
   const storeUrl = `${siteUrl}/${slug}`;
   const storeImg = store.cover_url || store.logo_url;
+  const isSandbox = isTestStore(slug, store);
 
   return {
     title: store.name,
     description: store.description ?? `Découvrez les produits de ${store.name}`,
+    robots: isSandbox
+      ? {
+          index: false,
+          follow: false,
+          nocache: true,
+          googleBot: {
+            index: false,
+            follow: false,
+            noimageindex: true,
+          },
+        }
+      : undefined,
     alternates: {
       canonical: storeUrl,
     },

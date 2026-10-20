@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { getAdminClient } from "@/lib/api-auth";
+import { isTestStore } from "@/lib/slug-utils";
 
 export const revalidate = 3600; // Regénère le sitemap dynamiquement chaque heure
 
@@ -7,13 +8,37 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://easytradez.site";
   const now = new Date();
 
-  // Pages statiques publiques
+  // Pages statiques publiques principales
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}/`,
       lastModified: now,
       changeFrequency: "daily",
       priority: 1.0,
+    },
+    {
+      url: `${baseUrl}/pricing`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/demo`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/privacy`,
@@ -32,10 +57,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const supabase = getAdminClient();
 
-    // 1. Boutiques & funnels publiés
+    // 1. Boutiques & funnels publiés (exclut formellement tout store sandbox ou de test interne)
     const { data: stores, error: storesError } = await supabase
       .from("stores")
-      .select("id, slug, updated_at, created_at, status")
+      .select("id, slug, updated_at, created_at, status, settings")
       .in("status", ["published", "active"]);
 
     if (storesError || !stores) {
@@ -45,7 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const storeMap = new Map<string, { slug: string; updated_at?: string }>();
     const storeRoutes: MetadataRoute.Sitemap = stores
-      .filter((s) => s.slug)
+      .filter((s) => s.slug && !isTestStore(s.slug, s))
       .map((s) => {
         storeMap.set(s.id, { slug: s.slug, updated_at: s.updated_at });
         return {

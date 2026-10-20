@@ -32,6 +32,7 @@ interface FormState {
   address: string;
   quantity: string;
   notes: string;
+  consent?: string;
 }
 
 type Step = "form" | "success";
@@ -139,6 +140,7 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
   const [orderId, setOrderId] = useState("");
   const [waLink, setWaLink]   = useState("");
   const [confirmedTotal, setConfirmedTotal] = useState<number | null>(null);
+  const [consent, setConsent] = useState(false);
 
   // Delivery
   const [rates, setRates]                   = useState<ShippingRateOption[]>([]);
@@ -251,6 +253,10 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
       if (normalizedBlacklist.has(cleanedPhone)) {
         errs.phone = "Ce numéro n'est pas autorisé à commander";
       }
+    }
+
+    if (!consent) {
+      errs.consent = "Veuillez accepter la transmission de vos coordonnées pour la livraison (Loi 18-07)";
     }
 
     setErrors(errs);
@@ -606,6 +612,22 @@ export function OrderForm({ product, store, disabled }: OrderFormProps) {
           {serverError}
         </p>
       )}
+
+      {/* Consentement obligatoire Loi 18-07 */}
+      <div className="pt-1">
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-stone-300 text-stone-900 focus:ring-stone-400 cursor-pointer"
+          />
+          <span className="text-xs text-stone-600 leading-snug">
+            J&apos;accepte que mes coordonnées (nom, téléphone, adresse) soient transmises au transporteur pour la livraison de ma commande (Loi algérienne n° 18-07).
+          </span>
+        </label>
+        {errors.consent && <p className="mt-1 text-xs text-red-500">⚠ {errors.consent}</p>}
+      </div>
 
       {/* Submit */}
       <button

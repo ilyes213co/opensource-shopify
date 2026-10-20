@@ -58,7 +58,92 @@ export const RESERVED_SLUGS = new Set<string>([
   "webhook",
   "cdn",
   "test",
+  "demo",
+  "pricing",
+  "about",
+  "blog",
+  // Marques et entités tierces protégées (interdites à l'inscription)
+  "apple",
+  "adidas",
+  "nike",
+  "gucci",
+  "samsung",
+  "huawei",
+  "xiaomi",
+  "sony",
+  "lg",
+  "oppo",
+  "realme",
+  "vivo",
+  "dell",
+  "hp",
+  "lenovo",
+  "asus",
+  "acer",
+  "intel",
+  "amd",
+  "microsoft",
+  "google",
+  "zara",
+  "louisvuitton",
+  "chanel",
+  "dior",
+  "prada",
+  "rolex",
+  "lacoste",
+  "puma",
+  "reebok",
+  "bershka",
+  "pullandbear",
+  "stradivarius",
+  "sephora",
+  "cartier",
+  "balenciaga",
+  "versace",
+  "armani",
+  "hermes",
+  "burberry",
+  // Transporteurs & institutions algériennes
+  "yalidine",
+  "zrexpress",
+  "procolis",
+  "maystro",
+  "baridimob",
+  "algerieposte",
+  "satim",
+  "cib",
+  "edahabia",
 ]);
+
+/**
+ * Slugs réservés aux tests internes, sandbox ou vérifications techniques
+ * Ces boutiques doivent être automatiquement exclues de l'indexation (noindex) et du sitemap.
+ */
+export const TEST_SANDBOX_SLUGS = new Set<string>([
+  "jjj",
+  "sss",
+  "zzz",
+  "ggg",
+  "eee",
+  "qa",
+  "eeee05",
+  "test",
+  "sandbox",
+  "dev",
+  "test-store",
+  "admin-test",
+  "qa-store",
+]);
+
+export function isTestStore(slug: string, storeData?: any): boolean {
+  if (!slug) return false;
+  const clean = slug.trim().toLowerCase();
+  if (TEST_SANDBOX_SLUGS.has(clean)) return true;
+  if (clean.startsWith("test-") || clean.startsWith("qa-") || clean.startsWith("sandbox-")) return true;
+  if (storeData?.is_sandbox === true || storeData?.settings?.is_sandbox === true) return true;
+  return false;
+}
+
 
 export const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export const MIN_SLUG_LENGTH = 3;
