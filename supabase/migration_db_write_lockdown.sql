@@ -144,8 +144,7 @@ BEGIN
 
   IF v_count >= v_limit THEN
     RAISE EXCEPTION 'PLAN_LIMIT_REACHED: stores'
-      USING ERRCODE = 'P0001',
-            MESSAGE = 'PLAN_LIMIT_REACHED: stores';
+      USING ERRCODE = 'P0001';
   END IF;
 
   RETURN NEW;
@@ -180,8 +179,7 @@ BEGIN
 
   IF v_owner_id IS NULL THEN
     RAISE EXCEPTION 'STORE_NOT_FOUND'
-      USING ERRCODE = 'P0002',
-            MESSAGE = 'STORE_NOT_FOUND';
+      USING ERRCODE = 'P0002';
   END IF;
 
   -- Récupération du plan du propriétaire
@@ -209,8 +207,7 @@ BEGIN
 
   IF v_count >= v_limit THEN
     RAISE EXCEPTION 'PLAN_LIMIT_REACHED: products'
-      USING ERRCODE = 'P0001',
-            MESSAGE = 'PLAN_LIMIT_REACHED: products';
+      USING ERRCODE = 'P0001';
   END IF;
 
   RETURN NEW;

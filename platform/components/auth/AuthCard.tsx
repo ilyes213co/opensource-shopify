@@ -248,11 +248,13 @@ function AuthCardContent({ initialMode = "login" }: AuthCardProps) {
       // If user provided name or phone, ensure profile table is updated
       if (data.user && (fullName.trim() || phone.trim())) {
         const cleanPhone = phone.replace(/\s+/g, "");
-        await supabase.from("profiles").upsert({
-          id: data.user.id,
-          full_name: fullName.trim() || data.user.user_metadata?.full_name || null,
-          phone: cleanPhone || data.user.user_metadata?.phone || null,
-        });
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: fullName.trim() || data.user.user_metadata?.full_name || null,
+            phone: cleanPhone || data.user.user_metadata?.phone || null,
+          })
+          .eq("id", data.user.id);
       }
 
       toast.success(
@@ -345,11 +347,13 @@ function AuthCardContent({ initialMode = "login" }: AuthCardProps) {
 
       if (data.user) {
         const cleanPhone = phone.replace(/\s+/g, "");
-        await supabase.from("profiles").upsert({
-          id: data.user.id,
-          full_name: fullName.trim(),
-          phone: cleanPhone || null,
-        });
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: fullName.trim(),
+            phone: cleanPhone || null,
+          })
+          .eq("id", data.user.id);
       }
 
       if (data.session) {
