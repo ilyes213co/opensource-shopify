@@ -62,7 +62,6 @@ export default function ProductPage({
   const [customerName, setCustomerName] = useState<string>("");
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [customerCommune, setCustomerCommune] = useState<string>("");
-  const [consent, setConsent] = useState<boolean>(false);
   const [showOrderForm, setShowOrderForm] = useState<boolean>(false);
 
   // UI state
@@ -174,11 +173,6 @@ export default function ProductPage({
         showToast("Ce numéro de téléphone n'est pas autorisé à passer commande.");
         return;
       }
-    }
-
-    if (!consent) {
-      showToast("Veuillez accepter la transmission de vos coordonnées pour la livraison (Loi 18-07).");
-      return;
     }
 
     submitOrder();
@@ -664,18 +658,6 @@ export default function ProductPage({
                 </div>
               ) : (
                 <>
-                  <div style={{ marginBottom: "14px", textAlign: "left" }}>
-                    <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", cursor: "pointer", fontSize: "12px", opacity: 0.85 }}>
-                      <input
-                        type="checkbox"
-                        checked={consent}
-                        onChange={(e) => setConsent(e.target.checked)}
-                        style={{ marginTop: "2px", cursor: "pointer" }}
-                      />
-                      <span>J&apos;accepte la transmission de mes coordonnées au transporteur pour la livraison de ma commande (Loi algérienne n° 18-07).</span>
-                    </label>
-                  </div>
-
                   <button
                     type="button"
                     className="pd-btn pd-btn--buy"

@@ -114,7 +114,7 @@ export default function PrivacyPage() {
             <p>Les données sont traitées pour des objectifs précis et licites :</p>
             <ul className="list-disc pl-5 space-y-1.5 text-slate-400">
               <li><strong>Exécution de la commande et acheminement du colis :</strong> Transmission des coordonnées au livreur partenaire du marchand (ex : Yalidine, ZR Express, Procolis) pour prise de contact et remise contre paiement.</li>
-              <li><strong>Consentement exprès au checkout :</strong> Une case à cocher obligatoire est requise sur le formulaire avant toute validation de commande.</li>
+              <li><strong>Validation de la commande au checkout :</strong> La soumission du formulaire de commande emporte transmission des coordonnées au transporteur pour la bonne exécution de la livraison.</li>
               <li><strong>Prévention des commandes abusives :</strong> Filtrage des numéros invalides et lutte contre les faux envois (retours COD) conformément à la loi 09-04.</li>
               <li><strong>Gestion des abonnements marchands :</strong> Facturation en DZD et activation des fonctionnalités de la plateforme.</li>
             </ul>
