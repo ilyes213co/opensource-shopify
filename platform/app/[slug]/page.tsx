@@ -57,9 +57,7 @@ const PUBLIC_PRODUCT_COLUMNS = [
   "slug",
   "description",
   "price",
-  "compare_price",
   "original_price",
-  "stock",
   "stock_quantity",
   "images",
   "options",
@@ -121,8 +119,8 @@ export default async function StoreOrFunnelPage({ params, searchParams }: PagePr
     slug: p.slug,
     description: p.description,
     price: Number(p.price ?? 0),
-    original_price: p.compare_price ?? p.original_price ?? null,
-    stock_quantity: Number(p.stock ?? p.stock_quantity ?? 0),
+    original_price: p.original_price ?? null,
+    stock_quantity: Number(p.stock_quantity ?? 0),
     images: Array.isArray(p.images)
       ? p.images.map((img: any) => (typeof img === "string" ? img : img?.url || "")).filter(Boolean)
       : [],
