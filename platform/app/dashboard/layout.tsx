@@ -68,6 +68,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!user) return null;
 
+  const isEditorPage = pathname?.endsWith("/editor") || pathname?.includes("/editor");
+  if (isEditorPage) {
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 selection:bg-brand selection:text-white">
+        {children}
+        <InvitationGateModal />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-bg text-ink flex flex-col lg:flex-row selection:bg-brand selection:text-white transition-colors duration-200">
       {/* ─── Mobile Header (< lg) ─── */}
