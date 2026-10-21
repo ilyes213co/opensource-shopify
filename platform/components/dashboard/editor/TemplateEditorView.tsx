@@ -29,6 +29,7 @@ import {
   ExternalLink,
   Info,
 } from "lucide-react";
+import FunnelEditorView from "./FunnelEditorView";
 
 interface TemplateEditorViewProps {
   storeId: string;
@@ -36,6 +37,10 @@ interface TemplateEditorViewProps {
 }
 
 export default function TemplateEditorView({ storeId, type = "boutique" }: TemplateEditorViewProps) {
+  if (type === "funnel") {
+    return <FunnelEditorView storeId={storeId} />;
+  }
+
   const queryClient = useQueryClient();
 
   // Load store
@@ -48,6 +53,10 @@ export default function TemplateEditorView({ storeId, type = "boutique" }: Templ
     queryFn: () => storesApi.getOne(storeId),
     enabled: Boolean(storeId),
   });
+
+  if (store?.type === "funnel") {
+    return <FunnelEditorView storeId={storeId} />;
+  }
 
   // Load products
   const { data: products = [] } = useQuery<Product[]>({

@@ -21,6 +21,7 @@ export interface FunnelPageProps {
   wilayas?: Wilaya[];
   storePixelId?: string;
   isEditable?: boolean;
+  isPreview?: boolean;
 }
 
 export default function FunnelPage({
@@ -30,9 +31,10 @@ export default function FunnelPage({
   wilayas = DEFAULT_WILAYAS,
   storePixelId,
   isEditable = false,
+  isPreview = false,
 }: FunnelPageProps) {
   const activeTheme = theme || store.theme || "crimson";
-  const pixelId = storePixelId || store.facebook_pixel_id || "";
+  const pixelId = isPreview ? "" : (storePixelId || store.facebook_pixel_id || "");
 
   // ─── Normalisation des images réelles (Supabase Storage / Cloudinary) ────────
   const rawImages = Array.isArray(product.images) ? product.images : [];
@@ -201,6 +203,12 @@ export default function FunnelPage({
   };
 
   const submitOrder = async () => {
+    if (isPreview) {
+      showToast("Mode aperçu : simulation de commande réussie !");
+      setConfirmedTotal(total);
+      setOrderDone(true);
+      return;
+    }
     setIsSubmitting(true);
     trackEvent("InitiateCheckout", {
       value: total,
@@ -327,7 +335,7 @@ export default function FunnelPage({
         />
 
         {/* ── ANNOUNCEMENT BAR (éditable en place) ── */}
-        {(store.slogan || isEditable) && (
+        {(store.slogan || isEditable || (store as any)?.content_overrides?.slogan) && (
           <div className="bg-[var(--accent)] text-[var(--accent-ink)] py-2 text-center text-xs md:text-sm font-semibold tracking-wide px-4">
             <Editable
               field="slogan"
@@ -359,7 +367,7 @@ export default function FunnelPage({
                 />
               )}
             </div>
-            {(store.city || isEditable) && (
+            {(store.city || isEditable || (store as any)?.content_overrides?.city) && (
               <span className="text-xs font-semibold px-2.5 py-1 rounded bg-[var(--accent-soft)] text-[var(--accent-text)]">
                 <Editable
                   field="city"

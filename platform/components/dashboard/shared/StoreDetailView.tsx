@@ -218,7 +218,7 @@ export default function StoreDetailView({ type, storeId: propStoreId }: StoreDet
             className="px-4 py-2 rounded-xl bg-accent hover:bg-accent/90 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm shadow-accent/25"
           >
             <Palette className="h-3.5 w-3.5" />
-            <span>Personnaliser vitrine</span>
+            <span>{isFunnel ? "Personnaliser le funnel" : "Personnaliser vitrine"}</span>
           </Link>
           <PublishButton storeId={store.id} currentStatus={store.status} />
           <a
@@ -261,8 +261,8 @@ export default function StoreDetailView({ type, storeId: propStoreId }: StoreDet
         <ActionCard
           href={`/dashboard/${type}/${store.id}/editor`}
           icon={Palette}
-          title="Éditeur de Vitrine & Hero"
-          desc="Personnalisez en temps réel l'accroche Hero, la barre Notice et la navigation rapide"
+          title={isFunnel ? "Éditeur de Tunnel & Offre" : "Éditeur de Vitrine & Hero"}
+          desc={isFunnel ? "Personnalisez en temps réel l'accroche, les garanties, l'offre et le bon de commande COD" : "Personnalisez en temps réel l'accroche Hero, la barre Notice et la navigation rapide"}
           color="bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
         />
         <ActionCard

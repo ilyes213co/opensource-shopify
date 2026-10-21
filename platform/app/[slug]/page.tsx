@@ -158,7 +158,7 @@ export default async function StoreOrFunnelPage({ params, searchParams }: PagePr
       brand_accent: (store as any).primary_color || store.brand_accent,
       logo_url: store.logo_url,
       cover_url: store.cover_url,
-      slogan: store.slogan,
+      slogan: (store as any).content_overrides?.slogan || store.slogan,
       whatsapp_phone: store.whatsapp_phone || undefined,
       phone: (store as any).phone,
       city: store.city,

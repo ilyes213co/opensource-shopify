@@ -1,4 +1,4 @@
-import TemplateEditorView from "@/components/dashboard/editor/TemplateEditorView";
+import FunnelEditorView from "@/components/dashboard/editor/FunnelEditorView";
 
 interface PageProps {
   params: { id: string };
@@ -7,5 +7,5 @@ interface PageProps {
 export const dynamic = "force-dynamic";
 
 export default function FunnelEditorPage({ params }: PageProps) {
-  return <TemplateEditorView storeId={params.id} type="funnel" />;
+  return <FunnelEditorView storeId={params.id} />;
 }
