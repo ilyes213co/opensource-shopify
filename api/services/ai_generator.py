@@ -34,6 +34,9 @@ from tenacity import (
 
 logger = logging.getLogger("storegen.ai")
 
+SUPABASE_URL_DEFAULT = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "https://lyntwhvvnklmcprnnump.supabase.co")
+SUPABASE_ANON_KEY_DEFAULT = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "")
+
 THEME_DESIGN_TOKENS: Dict[str, Dict[str, str]] = {
     "crimson": {
         "bg": "#faf7f6",
@@ -601,8 +604,8 @@ document.addEventListener("DOMContentLoaded", function() {
   var productId = "{star_id}";
   var productName = "{p_name}";
   var productPrice = {p_price};
-  var supabaseUrl = "https://lyntwhvvnklmcprnnump.supabase.co";
-  var supabaseAnonKey = "REDACTED_SUPABASE_ANON_KEY";
+  var supabaseUrl = "{SUPABASE_URL_DEFAULT}";
+  var supabaseAnonKey = "{SUPABASE_ANON_KEY_DEFAULT}";
 
   try {{
     fetch(supabaseUrl + "/rest/v1/shipping_rates?store_id=eq." + storeId + "&select=wilaya_id,price_home,price_desk,wilayas(name)", {{
@@ -996,10 +999,10 @@ document.addEventListener("DOMContentLoaded", function() {
   }}
 
   try {{
-    fetch("https://lyntwhvvnklmcprnnump.supabase.co/rest/v1/shipping_rates?store_id=eq." + storeId + "&select=wilaya_id,price_home,price_desk", {{
+    fetch("{SUPABASE_URL_DEFAULT}/rest/v1/shipping_rates?store_id=eq." + storeId + "&select=wilaya_id,price_home,price_desk", {{
       headers: {{
-        "apikey": "REDACTED_SUPABASE_ANON_KEY",
-        "Authorization": "Bearer REDACTED_SUPABASE_ANON_KEY"
+        "apikey": "{SUPABASE_ANON_KEY_DEFAULT}",
+        "Authorization": "Bearer {SUPABASE_ANON_KEY_DEFAULT}"
       }}
     }})
     .then(function(r) {{ return r.json(); }})
@@ -1325,8 +1328,8 @@ document.addEventListener("DOMContentLoaded", function() {
       submitBtn.style.opacity = "0.75";
       submitBtn.innerHTML = "Enregistrement en cours...";
 
-      var supabaseUrl = "https://lyntwhvvnklmcprnnump.supabase.co";
-      var supabaseAnonKey = "REDACTED_SUPABASE_ANON_KEY";
+      var supabaseUrl = "{SUPABASE_URL_DEFAULT}";
+      var supabaseAnonKey = "{SUPABASE_ANON_KEY_DEFAULT}";
 
       // Direct Supabase insert
       fetch(supabaseUrl + "/rest/v1/orders", {{
