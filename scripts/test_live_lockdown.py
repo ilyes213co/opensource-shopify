@@ -13,9 +13,24 @@ import uuid
 import requests
 from supabase import create_client
 
-SUPABASE_URL = "https://lyntwhvvnklmcprnnump.supabase.co"
-ANON_KEY = "REDACTED_SUPABASE_ANON_KEY"
-SERVICE_KEY = "REDACTED_SUPABASE_SERVICE_KEY"
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    load_dotenv(".env.local")
+    load_dotenv("api/.env")
+except ImportError:
+    pass
+
+SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+ANON_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY") or os.getenv("SUPABASE_ANON_KEY")
+SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+if not SUPABASE_URL:
+    sys.exit("❌ Erreur: SUPABASE_URL (ou NEXT_PUBLIC_SUPABASE_URL) n'est pas définie dans l'environnement.")
+if not ANON_KEY:
+    sys.exit("❌ Erreur: NEXT_PUBLIC_SUPABASE_ANON_KEY (ou SUPABASE_ANON_KEY) n'est pas définie dans l'environnement.")
+if not SERVICE_KEY:
+    sys.exit("❌ Erreur: SUPABASE_SERVICE_KEY n'est pas définie dans l'environnement. Impossible d'exécuter les tests de lockdown sans la clé service_role.")
 
 admin_client = create_client(SUPABASE_URL, SERVICE_KEY)
 anon_client = create_client(SUPABASE_URL, ANON_KEY)
